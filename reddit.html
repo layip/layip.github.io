@@ -855,6 +855,108 @@ body {
     border: 1px solid #e9ecef;
 }
 
+
+/* Extracted Signals Section */
+.user-extraction {
+    margin-top: 2rem;
+}
+
+.user-extraction h3 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1.3rem;
+    border-bottom: 2px solid #7c3aed;
+    padding-bottom: 0.5rem;
+}
+
+.extraction-note,
+.extraction-empty {
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 12px;
+    color: #4c1d95;
+    line-height: 1.5;
+    padding: 1rem;
+}
+
+.extraction-empty.small {
+    padding: 0.75rem;
+    font-style: italic;
+}
+
+.extraction-summary {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    margin: 1rem 0;
+}
+
+.extraction-count {
+    background: white;
+    border: 1px solid #e9d5ff;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.08);
+    padding: 1rem;
+}
+
+.extraction-count strong {
+    color: #7c3aed;
+    display: block;
+    font-size: 1.6rem;
+}
+
+.extraction-count span {
+    color: #5b21b6;
+    font-size: 0.9rem;
+}
+
+.extraction-group {
+    margin-top: 1rem;
+}
+
+.extraction-group h4 {
+    color: #4c1d95;
+    margin: 0 0 0.75rem 0;
+}
+
+.extraction-item {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-left: 4px solid #7c3aed;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    padding: 0.9rem;
+}
+
+.extraction-value {
+    color: #241145;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.extraction-source {
+    align-items: center;
+    color: #666;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.extraction-source span,
+.extraction-source a {
+    background: #f8f9fa;
+    border-radius: 999px;
+    padding: 0.25rem 0.6rem;
+}
+
+.extraction-source a {
+    color: #6d28d9;
+    font-weight: 700;
+    text-decoration: none;
+}
+
 /* Responsive Design */
 @media (max-width: 600px) {
     .tab-navigation {
@@ -1271,7 +1373,6 @@ body.home-page {
 
     <div class="home-page">
         <header class="branding hero-card">
-            <h1>Reddit User Detective</h1>
             <p>Phân tích hồ sơ, bài đăng, bình luận và subreddit Reddit</p>
             </div>
         </header>
@@ -1281,7 +1382,6 @@ body.home-page {
                 <label for="username-input">Nhập username Reddit:</label>
                 <input type="text" id="username-input" placeholder="ví dụ: username123" maxlength="20" autocomplete="off">
                 <button id="analyze-btn">Quét tài khoản</button>
-                <p class="scan-note">Nhập username không có u/.</p>
             </div>
 
             <div id="loading-indicator" class="loading-indicator" style="display: none;">
@@ -1339,6 +1439,7 @@ body.home-page {
                     <button class="tab-button" data-tab="posts">Bài đăng</button>
                     <button class="tab-button" data-tab="comments">Bình luận</button>
                     <button class="tab-button" data-tab="controversial">Tranh cãi</button>
+                    <button class="tab-button" data-tab="extraction">Trích xuất</button>
                 </div>
 
                 <div id="tab-content" class="tab-content">
@@ -1347,6 +1448,7 @@ body.home-page {
                     <div id="posts-tab" class="tab-pane"></div>
                     <div id="comments-tab" class="tab-pane"></div>
                     <div id="controversial-tab" class="tab-pane"></div>
+                    <div id="extraction-tab" class="tab-pane"></div>
                 </div>
             </div>
         </main>
@@ -1873,7 +1975,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function fetchUserComments(username, maxComments = 1000) {
+    async function fetchUserComments(username, maxComments = 5000) {
         try {
             return await fetchListingPages(REDDIT_ENDPOINTS.userComments(username), {
                 maxItems: maxComments,
@@ -1958,7 +2060,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const upvoteRatio = postData.upvote_ratio || 0;
 
             // Skip posts with too few votes (not statistically significant)
-            if (totalVotes < 10) return;
+            if (totalVotes < 100) return;
 
             // Calculate controversy score
             // Lower upvote ratio = more controversial
@@ -1974,7 +2076,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 downs: postData.downs || 0,
                 upvoteRatio: upvoteRatio,
                 totalVotes: totalVotes,
-                controversyĐiểm: Math.round(controversyScore * 100) / 100,
+                controversyScore: Math.round(controversyScore * 100) / 100,
                 createdUtc: postData.created_utc,
                 url: postData.url,
                 isSelf: postData.is_self,
@@ -2016,7 +2118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 downs: downs,
                 controversiality: controversiality,
                 totalVotes: totalVotes,
-                controversyĐiểm: Math.round(controversyScore * 100) / 100,
+                controversyScore: Math.round(controversyScore * 100) / 100,
                 createdUtc: commentData.created_utc,
                 linkTitle: commentData.link_title,
                 linkUrl: commentData.link_url
@@ -2026,7 +2128,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sort by controversy score (highest first) and take top 10
         return controversialItems
             .sort((a, b) => b.controversyScore - a.controversyScore)
-            .slice(0, 10);
+            .slice(0, 100);
     }
 
     function displayUserDataAndActivity(userData, subredditActivity, postsData, commentsData, controversialContent) {
@@ -2048,6 +2150,7 @@ document.addEventListener('DOMContentLoaded', function() {
         displayRecentPosts(postsData);
         displayRecentComments(commentsData);
         displayControversialContent(controversialContent);
+        displayExtractedSignals(userData, postsData, commentsData, controversialContent);
     }
 
     function displayUserData(data) {
@@ -2059,7 +2162,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const user = data.data;
 
         // Convert created timestamp to readable date
-        const createdDate = new Date(user.created_utc * 1000);
+        const createdDate = new Date(user.created_utc * 10000);
         const formattedDate = createdDate.toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: 'long',
@@ -2220,7 +2323,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 </div>
                 <div class="subreddit-info">
-                    ${sortedActivity.slice(0, 10).map((sub, index) => `
+                    ${sortedActivity.slice(0, 100).map((sub, index) => `
                         <div class="detail-item">
                             <span class="detail-label">
                                 ${index + 1}. r/${sub.subreddit}
@@ -2288,7 +2391,7 @@ document.addEventListener('DOMContentLoaded', function() {
         postsSection.innerHTML = `
             <h3>Bài đăng gần đây nhất</h3>
             <div class="posts-info">
-                ${postsData.slice(0, 10).map((post, index) => {
+                ${postsData.slice(0, 100).map((post, index) => {
                     const postData = post.data;
                     const title = postData.title || 'Không có tiêu đề';
                     const selftext = postData.selftext || '';
@@ -2352,7 +2455,7 @@ document.addEventListener('DOMContentLoaded', function() {
         commentsSection.innerHTML = `
             <h3>Bình luận gần đây nhất</h3>
             <div class="comments-info">
-                ${commentsData.slice(0, 10).map((comment, index) => {
+                ${commentsData.slice(0, 100).map((comment, index) => {
                     const commentData = comment.data;
                     const body = commentData.body || '';
                     const subreddit = commentData.subreddit || 'Không rõ';
@@ -2388,6 +2491,131 @@ document.addEventListener('DOMContentLoaded', function() {
         if (commentsTab) {
             commentsTab.appendChild(commentsSection);
         }
+    }
+
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function normalizeSignal(value) {
+        return String(value || '').trim().replace(/[.,;:)\]]+$/g, '');
+    }
+
+    function getItemSource(item, fallbackType) {
+        const data = item?.data || item || {};
+        return {
+            type: fallbackType || (item?.kind === 't3' ? 'Bài đăng' : 'Bình luận'),
+            subreddit: data.subreddit || 'Không rõ',
+            title: data.title || data.link_title || '',
+            url: data.permalink ? `https://www.reddit.com${data.permalink}` : (data.url || data.link_url || ''),
+            createdUtc: data.created_utc || item?.createdUtc || null
+        };
+    }
+
+    function addSignalsFromText(bucket, category, text, source, pattern) {
+        if (!text) return;
+        const matches = String(text).match(pattern) || [];
+        matches.forEach(rawValue => {
+            const value = normalizeSignal(rawValue);
+            const key = `${category}:${value.toLowerCase()}`;
+            if (!value || bucket.seen.has(key)) return;
+            bucket.seen.add(key);
+            bucket.items.push({ category, value, source });
+        });
+    }
+
+    function extractSignals(userData, postsData, commentsData, controversialContent) {
+        const bucket = { seen: new Set(), items: [] };
+        const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+        const phonePattern = /(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{3,4}\b/g;
+        const socialPattern = /(?:https?:\/\/)?(?:www\.)?(?:facebook|fb|instagram|tiktok|twitter|x|linkedin|youtube|youtu\.be|telegram|zalo|github)\.com\/[^\s<>()"']+/gi;
+        const locationPattern = /(?:sống ở|ở tại|đến từ|from|live in|located in|based in|location[:\s]+)\s+([^\n.,;|]{2,60})/gi;
+
+        const scanText = (text, source) => {
+            addSignalsFromText(bucket, 'Email', text, source, emailPattern);
+            addSignalsFromText(bucket, 'Số điện thoại', text, source, phonePattern);
+            addSignalsFromText(bucket, 'Liên kết mạng xã hội', text, source, socialPattern);
+            let match;
+            while ((match = locationPattern.exec(String(text || ''))) !== null) {
+                const value = normalizeSignal(match[1]);
+                const key = `Location:${value.toLowerCase()}`;
+                if (value && !bucket.seen.has(key)) {
+                    bucket.seen.add(key);
+                    bucket.items.push({ category: 'Location', value, source });
+                }
+            }
+        };
+
+        const user = userData?.data || {};
+        scanText([user.subreddit?.title, user.subreddit?.public_description, user.subreddit?.description].filter(Boolean).join('\n'), {
+            type: 'Hồ sơ', subreddit: `u/${user.name || 'user'}`, title: 'Thông tin hồ sơ', url: user.subreddit?.url ? `https://www.reddit.com${user.subreddit.url}` : ''
+        });
+
+        postsData.forEach(post => {
+            const data = post.data || {};
+            scanText([data.title, data.selftext, data.url].filter(Boolean).join('\n'), getItemSource(post, 'Bài đăng'));
+        });
+
+        commentsData.forEach(comment => {
+            const data = comment.data || {};
+            scanText(data.body || '', getItemSource(comment, 'Bình luận'));
+        });
+
+        controversialContent.forEach(item => {
+            scanText([item.title, item.content, item.linkUrl, item.url].filter(Boolean).join('\n'), getItemSource(item, item.type === 'post' ? 'Tranh cãi: bài đăng' : 'Tranh cãi: bình luận'));
+        });
+
+        return bucket.items;
+    }
+
+    function displayExtractedSignals(userData, postsData, commentsData, controversialContent) {
+        const extractionTab = document.getElementById('extraction-tab');
+        if (!extractionTab) return;
+
+        const signals = extractSignals(userData, postsData, commentsData, controversialContent);
+        const groups = ['Email', 'Số điện thoại', 'Location', 'Liên kết mạng xã hội'].map(category => ({
+            category,
+            items: signals.filter(item => item.category === category)
+        }));
+
+        extractionTab.innerHTML = `
+            <div class="user-extraction">
+                <h3>Trích xuất thông tin từ hồ sơ, hoạt động, bài đăng, bình luận và tranh cãi</h3>
+                <p class="extraction-note">Chỉ hiển thị thông tin công khai tự người dùng viết trong Reddit. Hệ thống không bẻ khóa, không lấy dữ liệu riêng tư và không đảm bảo mọi kết quả đều là thông tin liên hệ thật.</p>
+                <div class="extraction-summary">
+                    ${groups.map(group => `<div class="extraction-count"><strong>${group.items.length}</strong><span>${group.category}</span></div>`).join('')}
+                </div>
+                ${signals.length === 0 ? `
+                    <div class="extraction-empty">Chưa tìm thấy email, số điện thoại, location hoặc liên kết mạng xã hội trong dữ liệu đã quét.</div>
+                ` : groups.map(group => `
+                    <section class="extraction-group">
+                        <h4>${group.category}</h4>
+                        ${group.items.length === 0 ? '<p class="extraction-empty small">Không có dữ liệu.</p>' : group.items.map(item => {
+                            const date = item.source.createdUtc ? new Date(item.source.createdUtc * 1000).toLocaleDateString('vi-VN') : '';
+                            const safeUrl = item.source.url ? escapeHtml(item.source.url) : '';
+                            return `
+                                <div class="extraction-item">
+                                    <div class="extraction-value">${escapeHtml(item.value)}</div>
+                                    <div class="extraction-source">
+                                        <span>${escapeHtml(item.source.type)}</span>
+                                        <span>${escapeHtml(item.source.subreddit)}</span>
+                                        ${date ? `<span>${date}</span>` : ''}
+                                        ${item.source.title ? `<span>${escapeHtml(item.source.title).substring(0, 120)}</span>` : ''}
+                                        ${safeUrl ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Mở nguồn</a>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </section>
+                `).join('')}
+            </div>
+        `;
     }
 
     function displayControversialContent(controversialContent) {
