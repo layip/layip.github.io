@@ -1,10 +1,10 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-06-20T11:34:32.622Z"/>
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Công cụ phân tích hồ sơ Reddit bằng tiếng Việt với xu hướng hoạt động, tín hiệu subreddit và kiểm tra độ tin cậy.">
+    <meta name="description" content="Công cụ phân tích hồ sơ Reddit.">
     <meta name="keywords" content="reddit user analysis, reddit profile analyzer, reddit statistics, reddit activity tracker, reddit user detective">
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-    <title>Công cụ phân tích Reddit </title>
+    <title>Công cụ phân tích Reddit</title>
 
     <script type="application/ld+json">
     {
@@ -13,15 +13,15 @@
         {
           "@type": "WebSite",
           "name": "Reddit User Detective",
-          "url": "https://reddituserdetective.com/",
-          "description": "Phân tích hồ sơ và hoạt động Reddit bằng các chỉ số minh bạch."
+          "url": "https://layip.github.io/reddit.html",
+          "description": "Phân tích hồ sơ và hoạt động Reddit."
         },
         {
           "@type": "SoftwareApplication",
           "name": "Reddit User Detective",
           "applicationCategory": "UtilitiesApplication",
           "operatingSystem": "Any",
-          "url": "https://reddituserdetective.com/",
+          "url": "https://layip.github.io/reddit.html",
           "description": "Công cụ miễn phí để kiểm tra hồ sơ Reddit, subreddit tham gia, bài đăng, bình luận và tín hiệu tranh cãi.",
           "offers": {
             "@type": "Offer",
@@ -34,18 +34,18 @@
     </script>
 
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://reddituserdetective.com/">
+    <meta property="og:url" content="https://layip.github.io/reddit.html/">
     <meta property="og:title" content="Công cụ phân tích Reddit tiếng Việt | Reddit User Detective">
     <meta property="og:description" content="Phân tích hồ sơ Reddit với xu hướng hoạt động, kiểm tra độ tin cậy và quy trình kiểm duyệt.">
     <meta property="og:image" content="https://reddituserdetective.com/og-image.png">
 
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://reddituserdetective.com/">
+    <meta property="twitter:url" content="https://layip.github.io/reddit.html/">
     <meta property="twitter:title" content="Công cụ phân tích Reddit tiếng Việt | Reddit User Detective">
     <meta property="twitter:description" content="Phân tích hồ sơ Reddit với xu hướng hoạt động, kiểm tra độ tin cậy và quy trình kiểm duyệt.">
     <meta property="twitter:image" content="https://reddituserdetective.com/og-image.png">
 
-    <link rel="canonical" href="https://reddituserdetective.com/">
+    <link rel="canonical" href="https://layip.github.io/reddit.html/">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
@@ -973,7 +973,7 @@ body {
 #scan-count-input {
     border: 1px solid rgba(99, 102, 241, 0.25);
     border-radius: 12px;
-    max-width: 140px;
+    max-width: 110px;
     padding: 0.75rem;
     text-align: center;
 }
@@ -1410,17 +1410,17 @@ body.home-page {
     <div class="home-page">
         <header class="branding hero-card">
             <p>Phân tích hồ sơ, bài đăng, bình luận và subreddit Reddit</p>
-
+    
             </div>
         </header>
 
         <main class="main-content">
             <div class="input-section search-card">
                 <label for="username-input">Nhập username Reddit:</label>
-                <textarea id="username-input" placeholder="Nhập username hoặc mỗi dòng 1 username" maxlength="2000" autocomplete="off" rows="3"></textarea>
+                <textarea id="username-input" placeholder="Nhập list username mỗi dòng 1 username" maxlength="2000" autocomplete="off" rows="3"></textarea>
                 <div class="scan-controls">
-                    <label for="scan-count-input">Số lượng quét tối đa/user:</label>
-                    <input type="number" id="scan-count-input" min="10" max="1000" step="10" value="1000">
+                    <label for="scan-count-input">Số lượng user quét:</label>
+                    <input type="number" id="scan-count-input" min="1" max="20" value="1">
                 </div>
                 <button id="analyze-btn">Quét tài khoản</button>
             </div>
@@ -1719,12 +1719,12 @@ document.addEventListener('DOMContentLoaded', function() {
             .filter(Boolean))];
     }
 
-    function getRequestedItemLimit() {
+    function getRequestedScanCount(totalUsers) {
         const requested = Number.parseInt(scanCountInput?.value, 10);
-        if (!Number.isFinite(requested)) {
-            return 1000;
+        if (!Number.isFinite(requested) || requested < 1) {
+            return Math.min(totalUsers, 1);
         }
-        return Math.max(10, Math.min(requested, 1000));
+        return Math.min(totalUsers, Math.max(1, Math.min(requested, 20)));
     }
 
     function validateUsernameList(usernames) {
@@ -1750,8 +1750,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const selectedUsers = usernames.slice(0, 20);
-        const maxItemsPerUser = getRequestedItemLimit();
+        const selectedUsers = usernames.slice(0, getRequestedScanCount(usernames.length));
 
         selectedUsers.forEach(username => sendToIFTTTWebhook(username));
 
@@ -1770,9 +1769,9 @@ document.addEventListener('DOMContentLoaded', function() {
         analyzeBtn.textContent = selectedUsers.length > 1 ? 'Đang quét đa luồng...' : 'Đang quét...';
 
         if (selectedUsers.length === 1) {
-            fetchUserDataAndComments(selectedUsers[0], maxItemsPerUser);
+            fetchUserDataAndComments(selectedUsers[0]);
         } else {
-            fetchMultipleUsers(selectedUsers, maxItemsPerUser);
+            fetchMultipleUsers(selectedUsers);
         }
     });
 
@@ -1942,7 +1941,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, { comments: [], posts: [] });
     }
 
-    async function collectUserAnalysis(username, { useStepStatus = false, maxItems = 1000 } = {}) {
+    async function collectUserAnalysis(username, { useStepStatus = false } = {}) {
         if (loadingState.isCancelled) return null;
 
         if (useStepStatus) updateStepStatus('profile', 'loading', `Đang kết nối Reddit API cho u/${username}...`);
@@ -1962,20 +1961,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (loadingState.isCancelled) return null;
 
         if (useStepStatus) updateStepStatus('comments', 'loading', `Đang quét bình luận u/${username}...`);
-        let commentsData = await fetchUserComments(username, maxItems);
+        let commentsData = await fetchUserComments(username);
         if (useStepStatus) updateStepStatus('comments', 'completed', `${commentsData.length} bình luận đã phân tích`);
         if (loadingState.isCancelled) return null;
 
         if (useStepStatus) updateStepStatus('posts', 'loading', `Đang quét bài đăng u/${username}...`);
-        let postsData = await fetchUserPosts(username, maxItems);
+        let postsData = await fetchUserPosts(username);
         if (useStepStatus) updateStepStatus('posts', 'completed', `${postsData.length} bài đăng đã phân tích`);
         if (loadingState.isCancelled) return null;
 
         if (useStepStatus) updateStepStatus('analysis', 'loading', `Đang bổ sung overview và phân tích u/${username}...`);
-        const overviewData = await fetchUserOverview(username, maxItems);
+        const overviewData = await fetchUserOverview(username);
         const overviewSplit = splitOverviewItems(overviewData);
-        commentsData = mergeListingItems(commentsData, overviewSplit.comments, maxItems);
-        postsData = mergeListingItems(postsData, overviewSplit.posts, maxItems);
+        commentsData = mergeListingItems(commentsData, overviewSplit.comments, 1000);
+        postsData = mergeListingItems(postsData, overviewSplit.posts, 1000);
         const subredditActivity = analyzeSubredditActivity(commentsData);
         const controversialContent = analyzeControversialContent(postsData, commentsData);
         if (useStepStatus) updateStepStatus('analysis', 'completed', `Hoàn tất u/${username}: ${commentsData.length} bình luận, ${postsData.length} bài đăng`);
@@ -1983,10 +1982,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return { username, userData, subredditActivity, postsData, commentsData, controversialContent };
     }
 
-    async function fetchMultipleUsers(usernames, maxItemsPerUser = 1000) {
+    async function fetchMultipleUsers(usernames) {
         try {
             if (tabNavigation) tabNavigation.style.display = 'flex';
-            updateStepStatus('profile', 'loading', `Đang quét đa luồng ${usernames.length} user (tối đa 3 user cùng lúc, ${maxItemsPerUser} mục/user)...`);
+            updateStepStatus('profile', 'loading', `Đang quét đa luồng ${usernames.length} user (tối đa 3 user cùng lúc)...`);
 
             const results = [];
             let cursor = 0;
@@ -1996,7 +1995,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const username = usernames[cursor++];
                     updateLoadingMessage(`Đang phân tích u/${username}... (${results.length}/${usernames.length} xong)`);
                     try {
-                        const result = await collectUserAnalysis(username, { maxItems: maxItemsPerUser });
+                        const result = await collectUserAnalysis(username);
                         if (result) {
                             results.push(result);
                             displayUserDataAndActivity(result.userData, result.subredditActivity, result.postsData, result.commentsData, result.controversialContent, { append: true });
@@ -2025,9 +2024,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function fetchUserDataAndComments(username, maxItemsPerUser = 1000) {
+    async function fetchUserDataAndComments(username) {
         try {
-            const result = await collectUserAnalysis(username, { useStepStatus: true, maxItems: maxItemsPerUser });
+            const result = await collectUserAnalysis(username, { useStepStatus: true });
             if (result && !loadingState.isCancelled) {
                 displayUserDataAndActivity(result.userData, result.subredditActivity, result.postsData, result.commentsData, result.controversialContent);
             }
