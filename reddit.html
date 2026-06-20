@@ -1,10 +1,10 @@
-<!DOCTYPE html><html><head><meta charset="utf-8">
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-06-20T11:34:32.622Z"/>
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Công cụ phân tích hồ sơ Reddit .">
+    <meta name="description" content="Công cụ phân tích hồ sơ Reddit bằng tiếng Việt với xu hướng hoạt động, tín hiệu subreddit và kiểm tra độ tin cậy.">
     <meta name="keywords" content="reddit user analysis, reddit profile analyzer, reddit statistics, reddit activity tracker, reddit user detective">
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-    <title>Công cụ phân tích Reddit </title>
+    <title>Công cụ phân tích Reddit tiếng Việt | Reddit User Detective</title>
 
     <script type="application/ld+json">
     {
@@ -1271,7 +1271,8 @@ body.home-page {
 
     <div class="home-page">
         <header class="branding hero-card">
-            <h1>Reddit User</h1>
+            <h1>Reddit User Detective</h1>
+            <p>Phân tích hồ sơ, bài đăng, bình luận và subreddit Reddit</p>
             </div>
         </header>
 
@@ -1619,6 +1620,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const REDDIT_BASE_URL = 'https://www.reddit.com';
+    const REDDIT_PROXY_BASE_URL = 'https://reddit-user-detective-api.paul-522.workers.dev';
 
     const REDDIT_ENDPOINTS = Object.freeze({
         userAbout: username => `/user/${encodeURIComponent(username)}/about.json`,
@@ -1642,8 +1644,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return url.toString();
     }
 
-    async function fetchRedditJson(endpointPath, params = {}) {
-        const response = await fetch(buildRedditJsonUrl(endpointPath, params), {
+    async function fetchJsonUrl(url) {
+        const response = await fetch(url, {
             headers: {
                 'Accept': 'application/json'
             }
@@ -1654,6 +1656,46 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         return response.json();
+    }
+
+    function getProxyUrlForEndpoint(endpointPath, params = {}) {
+        const userMatch = endpointPath.match(/^\/user\/([^/]+)\/(about|comments|submitted)\.json$/);
+        if (!userMatch) {
+            return null;
+        }
+
+        const [, encodedUsername, endpointType] = userMatch;
+        const username = decodeURIComponent(encodedUsername);
+        const proxyPaths = {
+            about: `/api/user/${encodeURIComponent(username)}`,
+            comments: `/api/comments/${encodeURIComponent(username)}`,
+            submitted: `/api/posts/${encodeURIComponent(username)}`
+        };
+        const url = new URL(proxyPaths[endpointType], REDDIT_PROXY_BASE_URL);
+
+        ['limit', 'after'].forEach(key => {
+            if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+                url.searchParams.set(key, params[key]);
+            }
+        });
+
+        return url.toString();
+    }
+
+    async function fetchRedditJson(endpointPath, params = {}) {
+        const redditUrl = buildRedditJsonUrl(endpointPath, params);
+
+        try {
+            return await fetchJsonUrl(redditUrl);
+        } catch (directError) {
+            const proxyUrl = getProxyUrlForEndpoint(endpointPath, params);
+            if (!proxyUrl) {
+                throw directError;
+            }
+
+            console.warn('Direct Reddit JSON fetch failed; retrying through proxy:', directError);
+            return fetchJsonUrl(proxyUrl);
+        }
     }
 
     function getListingItemKey(item) {
