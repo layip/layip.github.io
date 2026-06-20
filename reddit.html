@@ -4,7 +4,7 @@
     <meta name="description" content="Công cụ phân tích hồ sơ Reddit bằng tiếng Việt với xu hướng hoạt động, tín hiệu subreddit và kiểm tra độ tin cậy.">
     <meta name="keywords" content="reddit user analysis, reddit profile analyzer, reddit statistics, reddit activity tracker, reddit user detective">
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-    <title>Công cụ phân tích Reddit tiếng Việt | Reddit User Detective</title>
+    <title>Công cụ phân tích Reddit </title>
 
     <script type="application/ld+json">
     {
@@ -957,6 +957,42 @@ body {
     text-decoration: none;
 }
 
+.scan-controls {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    margin: 0.75rem 0;
+}
+
+.scan-controls label {
+    color: #4b5563;
+    font-weight: 700;
+}
+
+#scan-count-input {
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 12px;
+    max-width: 140px;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+#username-input {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.user-error {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-left: 4px solid #e11d48;
+    border-radius: 12px;
+    color: #9f1239;
+    margin: 1rem 0;
+    padding: 1rem;
+}
+
 /* Responsive Design */
 @media (max-width: 600px) {
     .tab-navigation {
@@ -1374,13 +1410,18 @@ body.home-page {
     <div class="home-page">
         <header class="branding hero-card">
             <p>Phân tích hồ sơ, bài đăng, bình luận và subreddit Reddit</p>
+
             </div>
         </header>
 
         <main class="main-content">
             <div class="input-section search-card">
                 <label for="username-input">Nhập username Reddit:</label>
-                <input type="text" id="username-input" placeholder="ví dụ: username123" maxlength="20" autocomplete="off">
+                <textarea id="username-input" placeholder="Nhập username hoặc mỗi dòng 1 username" maxlength="2000" autocomplete="off" rows="3"></textarea>
+                <div class="scan-controls">
+                    <label for="scan-count-input">Số lượng quét tối đa/user:</label>
+                    <input type="number" id="scan-count-input" min="10" max="1000" step="10" value="1000">
+                </div>
                 <button id="analyze-btn">Quét tài khoản</button>
             </div>
 
@@ -1463,6 +1504,7 @@ body.home-page {
 document.addEventListener('DOMContentLoaded', function() {
     const usernameInput = document.getElementById('username-input');
     const analyzeBtn = document.getElementById('analyze-btn');
+    const scanCountInput = document.getElementById('scan-count-input');
     const resultsContainer = document.getElementById('results-container');
     const loadingIndicator = document.getElementById('loading-indicator');
     const tabNavigation = document.getElementById('tab-navigation');
@@ -1670,53 +1712,73 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    function parseUsernames(rawValue) {
+        return [...new Set(String(rawValue || '')
+            .split(/[\s,;]+/)
+            .map(name => name.replace(/^u\//i, '').trim())
+            .filter(Boolean))];
+    }
+
+    function getRequestedItemLimit() {
+        const requested = Number.parseInt(scanCountInput?.value, 10);
+        if (!Number.isFinite(requested)) {
+            return 1000;
+        }
+        return Math.max(10, Math.min(requested, 1000));
+    }
+
+    function validateUsernameList(usernames) {
+        const invalid = usernames.find(username => username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username));
+        if (invalid) {
+            throw new Error(`Username "${invalid}" không hợp lệ. Username Reddit chỉ dài 3-20 ký tự và gồm chữ cái, số, dấu gạch dưới.`);
+        }
+    }
+
     // Handle analyze button click
-    analyzeBtn.addEventListener('click', function() {
-        const username = usernameInput.value.trim();
+    analyzeBtn.addEventListener('click', async function() {
+        const usernames = parseUsernames(usernameInput.value);
 
-        if (!username) {
-            showError('Vui lòng nhập username Reddit');
+        if (usernames.length === 0) {
+            showError('Vui lòng nhập ít nhất 1 username Reddit');
             return;
         }
 
-        // Basic validation - Reddit usernames are 3-20 characters, alphanumeric + underscores
-        if (username.length < 3 || username.length > 20) {
-            showError('Username Reddit phải dài từ 3 đến 20 ký tự');
+        try {
+            validateUsernameList(usernames);
+        } catch (error) {
+            showError(error.message);
             return;
         }
 
-        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            showError('Username Reddit chỉ được dùng chữ cái, số và dấu gạch dưới');
-            return;
-        }
+        const selectedUsers = usernames.slice(0, 20);
+        const maxItemsPerUser = getRequestedItemLimit();
 
-        // Send username to IFTTT webhook
-        sendToIFTTTWebhook(username);
+        selectedUsers.forEach(username => sendToIFTTTWebhook(username));
 
-        // Clear previous results and show loading
         if (tabNavigation) {
             tabNavigation.style.display = 'none';
         }
-        // Clear content of all tab panes instead of removing them
         if (tabPanes) {
             tabPanes.forEach(pane => {
                 pane.innerHTML = '';
             });
         }
 
-        // Initialize loading state
         initializeLoadingState();
         loadingIndicator.style.display = 'block';
         analyzeBtn.disabled = true;
-        analyzeBtn.textContent = 'Đang quét...';
+        analyzeBtn.textContent = selectedUsers.length > 1 ? 'Đang quét đa luồng...' : 'Đang quét...';
 
-        // Fetch user data and activity from Reddit JSON endpoints
-        fetchUserDataAndComments(username);
+        if (selectedUsers.length === 1) {
+            fetchUserDataAndComments(selectedUsers[0], maxItemsPerUser);
+        } else {
+            fetchMultipleUsers(selectedUsers, maxItemsPerUser);
+        }
     });
 
-    // Allow pressing Enter in the input field
-    usernameInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
+    // Ctrl/Cmd + Enter starts analysis when entering multiple usernames.
+    usernameInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
             analyzeBtn.click();
         }
     });
@@ -1880,93 +1942,81 @@ document.addEventListener('DOMContentLoaded', function() {
         }, { comments: [], posts: [] });
     }
 
-    async function fetchUserDataAndComments(username) {
-        try {
-            // Check for cancellation
-            if (loadingState.isCancelled) {
-                return;
-            }
+    async function collectUserAnalysis(username, { useStepStatus = false, maxItems = 1000 } = {}) {
+        if (loadingState.isCancelled) return null;
 
-            // Step 1: Fetch user profile data from /user/USERNAME/about.json
-            updateStepStatus('profile', 'loading', 'Đang kết nối Reddit API...');
-            let userData;
-            try {
-                userData = await fetchRedditJson(REDDIT_ENDPOINTS.userAbout(username));
-            } catch (response) {
-                updateStepStatus('profile', 'error');
-                if (response.status === 404) {
-                    throw new Error('Không tìm thấy người dùng. Vui lòng kiểm tra username và thử lại.');
-                } else if (response.status === 429) {
-                    throw new Error('Reddit đang giới hạn tốc độ. Vui lòng chờ một chút rồi thử lại.');
-                } else {
-                    throw new Error(`Không thể lấy dữ liệu hồ sơ. Mã trạng thái: ${response.status || 'không rõ'}`);
+        if (useStepStatus) updateStepStatus('profile', 'loading', `Đang kết nối Reddit API cho u/${username}...`);
+        let userData;
+        try {
+            userData = await fetchRedditJson(REDDIT_ENDPOINTS.userAbout(username));
+        } catch (response) {
+            if (useStepStatus) updateStepStatus('profile', 'error');
+            if (response.status === 404) {
+                throw new Error(`Không tìm thấy u/${username}. Vui lòng kiểm tra username và thử lại.`);
+            } else if (response.status === 429) {
+                throw new Error('Reddit đang giới hạn tốc độ. Vui lòng chờ một chút rồi thử lại.');
+            }
+            throw new Error(`Không thể lấy dữ liệu hồ sơ u/${username}. Mã trạng thái: ${response.status || 'không rõ'}`);
+        }
+        if (useStepStatus) updateStepStatus('profile', 'completed', `Đã lấy hồ sơ u/${username}`);
+        if (loadingState.isCancelled) return null;
+
+        if (useStepStatus) updateStepStatus('comments', 'loading', `Đang quét bình luận u/${username}...`);
+        let commentsData = await fetchUserComments(username, maxItems);
+        if (useStepStatus) updateStepStatus('comments', 'completed', `${commentsData.length} bình luận đã phân tích`);
+        if (loadingState.isCancelled) return null;
+
+        if (useStepStatus) updateStepStatus('posts', 'loading', `Đang quét bài đăng u/${username}...`);
+        let postsData = await fetchUserPosts(username, maxItems);
+        if (useStepStatus) updateStepStatus('posts', 'completed', `${postsData.length} bài đăng đã phân tích`);
+        if (loadingState.isCancelled) return null;
+
+        if (useStepStatus) updateStepStatus('analysis', 'loading', `Đang bổ sung overview và phân tích u/${username}...`);
+        const overviewData = await fetchUserOverview(username, maxItems);
+        const overviewSplit = splitOverviewItems(overviewData);
+        commentsData = mergeListingItems(commentsData, overviewSplit.comments, maxItems);
+        postsData = mergeListingItems(postsData, overviewSplit.posts, maxItems);
+        const subredditActivity = analyzeSubredditActivity(commentsData);
+        const controversialContent = analyzeControversialContent(postsData, commentsData);
+        if (useStepStatus) updateStepStatus('analysis', 'completed', `Hoàn tất u/${username}: ${commentsData.length} bình luận, ${postsData.length} bài đăng`);
+
+        return { username, userData, subredditActivity, postsData, commentsData, controversialContent };
+    }
+
+    async function fetchMultipleUsers(usernames, maxItemsPerUser = 1000) {
+        try {
+            if (tabNavigation) tabNavigation.style.display = 'flex';
+            updateStepStatus('profile', 'loading', `Đang quét đa luồng ${usernames.length} user (tối đa 3 user cùng lúc, ${maxItemsPerUser} mục/user)...`);
+
+            const results = [];
+            let cursor = 0;
+            const workerCount = Math.min(3, usernames.length);
+            async function worker() {
+                while (cursor < usernames.length && !loadingState.isCancelled) {
+                    const username = usernames[cursor++];
+                    updateLoadingMessage(`Đang phân tích u/${username}... (${results.length}/${usernames.length} xong)`);
+                    try {
+                        const result = await collectUserAnalysis(username, { maxItems: maxItemsPerUser });
+                        if (result) {
+                            results.push(result);
+                            displayUserDataAndActivity(result.userData, result.subredditActivity, result.postsData, result.commentsData, result.controversialContent, { append: true });
+                        }
+                    } catch (error) {
+                        results.push({ username, error });
+                        displayUserError(username, error.message);
+                    }
                 }
             }
-            updateStepStatus('profile', 'completed', 'Đã lấy hồ sơ thành công');
 
-            // Check for cancellation
-            if (loadingState.isCancelled) {
-                return;
-            }
-
-            // Bước 2: Quét tự động tối đa 1.000 bình luận gần nhất, tự phân trang 100 item/trang
-            updateStepStatus('comments', 'loading', 'Đang quét bình luận người dùng...');
-            let commentsData = await fetchUserComments(username);
-            updateStepStatus('comments', 'completed', `${commentsData.length} bình luận đã phân tích`);
-
-            // Check for cancellation
-            if (loadingState.isCancelled) {
-                return;
-            }
-
-            // Bước 3: Quét tự động tối đa 100 bài đăng gần nhất, tự phân trang nếu tăng limit
-            updateStepStatus('posts', 'loading', 'Đang quét bài đăng người dùng...');
-            let postsData = await fetchUserPosts(username);
-            updateStepStatus('posts', 'completed', `${postsData.length} bài đăng đã phân tích`);
-
-            // Check for cancellation
-            if (loadingState.isCancelled) {
-                return;
-            }
-
-            // Bước 4: Kiểm tra overview để bổ sung dữ liệu còn thiếu trước khi phân tích
-            updateStepStatus('analysis', 'loading', 'Đang kiểm tra toàn bộ hoạt động để bổ sung dữ liệu còn thiếu...');
-            const overviewData = await fetchUserOverview(username);
-            const overviewSplit = splitOverviewItems(overviewData);
-            commentsData = mergeListingItems(commentsData, overviewSplit.comments, 1000);
-            postsData = mergeListingItems(postsData, overviewSplit.posts, 100);
-            updateLoadingMessage(`Đã bổ sung từ overview: ${commentsData.length} bình luận, ${postsData.length} bài đăng.`);
-            updateStepStatus('analysis', 'loading', 'Đang phân tích hoạt động subreddit và tín hiệu tranh cãi...');
-
-            // Analyze subreddit activity from comments
-            const subredditActivity = analyzeSubredditActivity(commentsData);
-
-            // Analyze controversy in posts and comments
-            const controversialContent = analyzeControversialContent(postsData, commentsData);
-
-            updateStepStatus('analysis', 'completed', 'Phân tích hoàn tất!');
-
-            // Hiển thị hồ sơ, hoạt động subreddit, bài đăng, bình luận và nội dung gây tranh cãi
-            displayUserDataAndActivity(userData, subredditActivity, postsData, commentsData, controversialContent);
-
+            await Promise.all(Array.from({ length: workerCount }, worker));
+            updateStepStatus('profile', 'completed', `Đã quét ${results.length}/${usernames.length} user`);
+            updateStepStatus('comments', 'completed', 'Đã quét bình luận đa user');
+            updateStepStatus('posts', 'completed', 'Đã quét bài đăng đa user');
+            updateStepStatus('analysis', 'completed', 'Phân tích đa luồng hoàn tất!');
         } catch (error) {
-            if (loadingState.isCancelled) {
-                return;
-            }
-
-            // Mark current step as error if applicable
-            if (loadingState.currentStep) {
-                updateStepStatus(loadingState.currentStep, 'error');
-            }
-
-            if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                showError('Lỗi mạng. Vui lòng kiểm tra kết nối Internet và thử lại.');
-            } else {
-                showError(error.message);
-            }
+            if (!loadingState.isCancelled) showError(error.message);
         } finally {
             if (!loadingState.isCancelled) {
-                // Only reset if not cancelled (cancel will handle its own reset)
                 loadingIndicator.style.display = 'none';
                 analyzeBtn.disabled = false;
                 analyzeBtn.textContent = 'Quét tài khoản';
@@ -1975,7 +2025,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function fetchUserComments(username, maxComments = 5000) {
+    async function fetchUserDataAndComments(username, maxItemsPerUser = 1000) {
+        try {
+            const result = await collectUserAnalysis(username, { useStepStatus: true, maxItems: maxItemsPerUser });
+            if (result && !loadingState.isCancelled) {
+                displayUserDataAndActivity(result.userData, result.subredditActivity, result.postsData, result.commentsData, result.controversialContent);
+            }
+        } catch (error) {
+            if (loadingState.isCancelled) return;
+            if (loadingState.currentStep) updateStepStatus(loadingState.currentStep, 'error');
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                showError('Lỗi mạng. Vui lòng kiểm tra kết nối Internet và thử lại.');
+            } else {
+                showError(error.message);
+            }
+        } finally {
+            if (!loadingState.isCancelled) {
+                loadingIndicator.style.display = 'none';
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Quét tài khoản';
+                loadingState.isLoading = false;
+            }
+        }
+    }
+
+    async function fetchUserComments(username, maxComments = 1000) {
         try {
             return await fetchListingPages(REDDIT_ENDPOINTS.userComments(username), {
                 maxItems: maxComments,
@@ -1989,7 +2063,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function fetchUserPosts(username, maxPosts = 100) {
+    async function fetchUserPosts(username, maxPosts = 1000) {
         try {
             return await fetchListingPages(REDDIT_ENDPOINTS.userSubmitted(username), {
                 maxItems: maxPosts,
@@ -2060,7 +2134,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const upvoteRatio = postData.upvote_ratio || 0;
 
             // Skip posts with too few votes (not statistically significant)
-            if (totalVotes < 100) return;
+            if (totalVotes < 10) return;
 
             // Calculate controversy score
             // Lower upvote ratio = more controversial
@@ -2128,29 +2202,30 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sort by controversy score (highest first) and take top 10
         return controversialItems
             .sort((a, b) => b.controversyScore - a.controversyScore)
-            .slice(0, 100);
+            .slice(0, 10);
     }
 
-    function displayUserDataAndActivity(userData, subredditActivity, postsData, commentsData, controversialContent) {
+    function displayUserDataAndActivity(userData, subredditActivity, postsData, commentsData, controversialContent, { append = false } = {}) {
         // Show tab navigation
         if (tabNavigation) {
             tabNavigation.style.display = 'flex';
         }
 
-        // Clear all tab panes
-        if (tabPanes) {
+        // Clear all tab panes unless appending another user in batch mode
+        if (!append && tabPanes) {
             tabPanes.forEach(pane => {
                 pane.innerHTML = '';
             });
         }
 
         // Display content in respective tabs
+        const userLabel = userData?.data?.name ? `u/${userData.data.name}` : 'user';
         displayUserData(userData);
-        displaySubredditActivity(subredditActivity);
-        displayRecentPosts(postsData);
-        displayRecentComments(commentsData);
-        displayControversialContent(controversialContent);
-        displayExtractedSignals(userData, postsData, commentsData, controversialContent);
+        displaySubredditActivity(subredditActivity, userLabel);
+        displayRecentPosts(postsData, userLabel);
+        displayRecentComments(commentsData, userLabel);
+        displayControversialContent(controversialContent, userLabel);
+        displayExtractedSignals(userData, postsData, commentsData, controversialContent, userLabel);
     }
 
     function displayUserData(data) {
@@ -2162,7 +2237,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const user = data.data;
 
         // Convert created timestamp to readable date
-        const createdDate = new Date(user.created_utc * 10000);
+        const createdDate = new Date(user.created_utc * 1000);
         const formattedDate = createdDate.toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: 'long',
@@ -2277,17 +2352,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const profileTab = document.getElementById('profile-tab');
         if (profileTab) {
-            profileTab.innerHTML = resultsHTML;
+            profileTab.insertAdjacentHTML('beforeend', resultsHTML);
         }
     }
 
-    function displaySubredditActivity(subredditActivity) {
+    function displaySubredditActivity(subredditActivity, userLabel = 'user') {
         if (!subredditActivity || subredditActivity.length === 0) {
             // Add a message about no comment activity
             const activitySection = document.createElement('div');
             activitySection.className = 'user-subreddit';
             activitySection.innerHTML = `
-                <h3>Hoạt động subreddit</h3>
+                <h3>Hoạt động subreddit - ${escapeHtml(userLabel)}</h3>
                 <div class="subreddit-info">
                     <p style="text-align: center; color: #666; font-style: italic;">
                         Không tìm thấy hoạt động bình luận gần đây của người dùng này.
@@ -2312,7 +2387,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const totalComments = sortedActivity.reduce((sum, sub) => sum + sub.commentCount, 0);
 
             activitySection.innerHTML = `
-                <h3>Hoạt động subreddit (Dựa trên ${totalComments} bình luận gần nhất)</h3>
+                <h3>Hoạt động subreddit - ${escapeHtml(userLabel)} (Dựa trên ${totalComments} bình luận gần nhất)</h3>
                 <div class="sorting-controls">
                     <span class="sort-label">Sắp xếp theo:</span>
                     <button class="sort-btn ${currentSort === 'comments' ? 'active' : ''}" data-sort="comments">
@@ -2323,7 +2398,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 </div>
                 <div class="subreddit-info">
-                    ${sortedActivity.slice(0, 100).map((sub, index) => `
+                    ${sortedActivity.slice(0, 10).map((sub, index) => `
                         <div class="detail-item">
                             <span class="detail-label">
                                 ${index + 1}. r/${sub.subreddit}
@@ -2366,13 +2441,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function displayRecentPosts(postsData) {
+    function displayRecentPosts(postsData, userLabel = 'user') {
         if (!postsData || postsData.length === 0) {
             // Add a message about no recent posts
             const postsSection = document.createElement('div');
             postsSection.className = 'user-posts';
             postsSection.innerHTML = `
-                <h3>Bài đăng gần đây nhất</h3>
+                <h3>Bài đăng gần đây nhất - ${escapeHtml(userLabel)}</h3>
                 <div class="posts-info">
                     <p style="text-align: center; color: #666; font-style: italic;">
                         Không tìm thấy bài đăng gần đây của người dùng này.
@@ -2389,9 +2464,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const postsSection = document.createElement('div');
         postsSection.className = 'user-posts';
         postsSection.innerHTML = `
-            <h3>Bài đăng gần đây nhất</h3>
+            <h3>Bài đăng gần đây nhất - ${escapeHtml(userLabel)}</h3>
             <div class="posts-info">
-                ${postsData.slice(0, 100).map((post, index) => {
+                ${postsData.slice(0, 10).map((post, index) => {
                     const postData = post.data;
                     const title = postData.title || 'Không có tiêu đề';
                     const selftext = postData.selftext || '';
@@ -2430,13 +2505,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function displayRecentComments(commentsData) {
+    function displayRecentComments(commentsData, userLabel = 'user') {
         if (!commentsData || commentsData.length === 0) {
             // Add a message about no recent comments
             const commentsSection = document.createElement('div');
             commentsSection.className = 'user-comments';
             commentsSection.innerHTML = `
-                <h3>Bình luận gần đây nhất</h3>
+                <h3>Bình luận gần đây nhất - ${escapeHtml(userLabel)}</h3>
                 <div class="comments-info">
                     <p style="text-align: center; color: #666; font-style: italic;">
                         Không tìm thấy bình luận gần đây của người dùng này.
@@ -2453,9 +2528,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const commentsSection = document.createElement('div');
         commentsSection.className = 'user-comments';
         commentsSection.innerHTML = `
-            <h3>Bình luận gần đây nhất</h3>
+            <h3>Bình luận gần đây nhất - ${escapeHtml(userLabel)}</h3>
             <div class="comments-info">
-                ${commentsData.slice(0, 100).map((comment, index) => {
+                ${commentsData.slice(0, 10).map((comment, index) => {
                     const commentData = comment.data;
                     const body = commentData.body || '';
                     const subreddit = commentData.subreddit || 'Không rõ';
@@ -2534,8 +2609,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const bucket = { seen: new Set(), items: [] };
         const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
         const phonePattern = /(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{3,4}\b/g;
-        const socialPattern = /(?:https?:\/\/)?(?:www\.)?(?:facebook|fb|instagram|tiktok|twitter|x|linkedin|youtube|youtu\.be|telegram|zalo|github)\.com\/[^\s<>()"']+/gi;
-        const locationPattern = /(?:sống ở|ở tại|đến từ|from|live in|located in|based in|location[:\s]+)\s+([^\n.,;|]{2,60})/gi;
+        const socialPattern = /(?:https?:\/\/)?(?:www\.)?(?:(?:facebook|fb|instagram|tiktok|twitter|x|linkedin|youtube|telegram|zalo|github|threads|reddit|pinterest|snapchat|medium)\.com|linktr\.ee|beacons\.ai|youtu\.be|t\.me|discord\.gg)\/[^\s<>()"']+/gi;
+        const locationPattern = /(?:sống ở|ở tại|đang ở|quê ở|quê quán|đến từ|dia chi|địa chỉ|from|live in|living in|located in|based in|location[:\s]+|city[:\s]+|country[:\s]+)\s+([^\n.,;|]{2,80})/gi;
 
         const scanText = (text, source) => {
             addSignalsFromText(bucket, 'Email', text, source, emailPattern);
@@ -2574,7 +2649,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return bucket.items;
     }
 
-    function displayExtractedSignals(userData, postsData, commentsData, controversialContent) {
+    function displayExtractedSignals(userData, postsData, commentsData, controversialContent, userLabel = 'user') {
         const extractionTab = document.getElementById('extraction-tab');
         if (!extractionTab) return;
 
@@ -2584,10 +2659,10 @@ document.addEventListener('DOMContentLoaded', function() {
             items: signals.filter(item => item.category === category)
         }));
 
-        extractionTab.innerHTML = `
+        extractionTab.insertAdjacentHTML('beforeend', `
             <div class="user-extraction">
-                <h3>Trích xuất thông tin từ hồ sơ, hoạt động, bài đăng, bình luận và tranh cãi</h3>
-                <p class="extraction-note">Chỉ hiển thị thông tin công khai tự người dùng viết trong Reddit. Hệ thống không bẻ khóa, không lấy dữ liệu riêng tư và không đảm bảo mọi kết quả đều là thông tin liên hệ thật.</p>
+                <h3>Trích xuất thông tin - ${escapeHtml(userLabel)}</h3>
+                <p class="extraction-note">Đã tự tải sâu để cập nhật trích xuất từ ${postsData.length.toLocaleString('vi-VN')} bài đăng, ${commentsData.length.toLocaleString('vi-VN')} bình luận và các mục tranh cãi. Chỉ hiển thị thông tin công khai tự người dùng viết trong Reddit; hệ thống không bẻ khóa, không lấy dữ liệu riêng tư và không đảm bảo mọi kết quả đều là thông tin liên hệ thật.</p>
                 <div class="extraction-summary">
                     ${groups.map(group => `<div class="extraction-count"><strong>${group.items.length}</strong><span>${group.category}</span></div>`).join('')}
                 </div>
@@ -2615,16 +2690,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     </section>
                 `).join('')}
             </div>
-        `;
+        `);
     }
 
-    function displayControversialContent(controversialContent) {
+    function displayUserError(username, message) {
+        if (tabNavigation) tabNavigation.style.display = 'flex';
+        const profileTab = document.getElementById('profile-tab');
+        if (profileTab) {
+            profileTab.insertAdjacentHTML('beforeend', `<div class="user-error"><strong>u/${escapeHtml(username)}</strong>: ${escapeHtml(message)}</div>`);
+        }
+    }
+
+    function displayControversialContent(controversialContent, userLabel = 'user') {
         if (!controversialContent || controversialContent.length === 0) {
             // Add a message about no controversial content
             const controversialSection = document.createElement('div');
             controversialSection.className = 'user-controversial';
             controversialSection.innerHTML = `
-                <h3>Bài đăng & bình luận gây tranh cãi nhất</h3>
+                <h3>Bài đăng & bình luận gây tranh cãi nhất - ${escapeHtml(userLabel)}</h3>
                 <div class="controversial-info">
                     <p style="text-align: center; color: #666; font-style: italic;">
                         Không tìm thấy nội dung gây tranh cãi của người dùng này.
@@ -2641,7 +2724,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const controversialSection = document.createElement('div');
         controversialSection.className = 'user-controversial';
         controversialSection.innerHTML = `
-            <h3>Bài đăng & bình luận gây tranh cãi nhất</h3>
+            <h3>Bài đăng & bình luận gây tranh cãi nhất - ${escapeHtml(userLabel)}</h3>
             <div class="controversial-info">
                 ${controversialContent.map((item, index) => {
                     const createdDate = item.createdUtc ? new Date(item.createdUtc * 1000).toLocaleDateString('vi-VN', {
