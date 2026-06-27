@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Security Sync - Bản HTML tĩnh</title>
+  <meta name="description" content="Bản HTML tĩnh được chuyển từ ứng dụng Python Flask, không cần server hoặc database.">
+  <style>
+    :root { color-scheme: light dark; --brand:#2563eb; --ink:#0f172a; --muted:#64748b; --card:#fff; --bg:#f1f5f9; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
+    header { min-height: 46vh; display:grid; place-items:center; padding:48px 20px; text-align:center; background:linear-gradient(135deg,#1d4ed8,#0f172a); color:white; }
+    header h1 { margin:0 0 12px; font-size:clamp(2rem,5vw,4rem); letter-spacing:-.04em; }
+    header p { margin:0 auto; max-width:760px; color:#dbeafe; font-size:1.1rem; line-height:1.7; }
+    main { width:min(1100px,92vw); margin:-64px auto 48px; display:grid; gap:20px; }
+    .card { background:var(--card); border:1px solid rgba(148,163,184,.35); border-radius:24px; padding:24px; box-shadow:0 24px 60px rgba(15,23,42,.14); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
+    .badge { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:#dbeafe; color:#1d4ed8; font-weight:700; font-size:.85rem; }
+    h2 { margin:0 0 12px; font-size:1.35rem; }
+    p, li { color:var(--muted); line-height:1.7; }
+    .button { display:inline-block; margin-top:8px; padding:12px 18px; border-radius:999px; background:var(--brand); color:white; text-decoration:none; font-weight:800; }
+    .notice { border-left:4px solid #22c55e; background:#f0fdf4; padding:14px 16px; border-radius:14px; color:#166534; }
+    footer { text-align:center; color:#94a3b8; padding:32px 20px; }
+    @media (prefers-color-scheme: dark) { :root { --ink:#e2e8f0; --muted:#94a3b8; --card:#0f172a; --bg:#020617; } .notice { background:#052e16; color:#bbf7d0; } .badge { background:#1e3a8a; color:#dbeafe; } }
+  </style>
+</head>
+<body>
+  <header>
+    <section>
+      <span class="badge">HTML tĩnh</span>
+      <h1>Security Sync</h1>
+      <p>Bản chuyển đổi từ file Python/Flask sang một trang HTML độc lập, có thể chạy trực tiếp trên GitHub Pages mà không cần cài Flask, SQLite hoặc máy chủ backend.</p>
+    </section>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Thông tin chuyển đổi</h2>
+      <p class="notice">Trang này chỉ giữ phần giao diện giới thiệu an toàn. Các chức năng backend như database, đăng nhập admin, webhook, thu thập IP/vị trí/camera và gửi dữ liệu ra dịch vụ ngoài đã được loại bỏ vì HTML tĩnh không có server để xử lý và để bảo vệ quyền riêng tư người xem.</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Có bản PHP đầy đủ</h2>
+        <p>Dùng file <strong>122.php</strong> nếu cần quản trị link, phân loại, tùy chỉnh giao diện, link ảnh preview và đếm lượt mở mà không dùng bot.</p>
+      </article>
+      <article class="card">
+        <h2>Không có database</h2>
+        <p>Dữ liệu không được ghi vào SQLite hoặc gửi về backend. Nội dung hiển thị hoàn toàn nằm trong file HTML.</p>
+      </article>
+      <article class="card">
+        <h2>Tương thích GitHub Pages</h2>
+        <p>File chỉ dùng HTML và CSS thuần, phù hợp với repository website tĩnh.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Cách sử dụng</h2>
+      <ol>
+        <li>Mở <strong>122.html</strong> nếu chỉ cần trang tĩnh.</li>
+        <li>Chạy <code>php -S localhost:8000 122.php</code> nếu cần bản PHP đầy đủ.</li>
+        <li>Vào <code>http://localhost:8000/122.php?admin=1</code> để quản trị link, phân loại, màu sắc và CSS tùy chỉnh.</li>
+      </ol>
+      <a class="button" href="122.php">Mở bản PHP</a>
+    </section>
+  </main>
+
+  <footer>© 2026 - Static HTML conversion</footer>
+</body>
+</html>
