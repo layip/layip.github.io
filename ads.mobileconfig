@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+	<key>PayloadIdentifier</key>
+	<string>vn.strongblock.profile.d18ad9</string>
+	<key>PayloadUUID</key>
+	<string>BA34C6D1-56F6-4B79-89CA-4311D1213079</string>
+	<key>PayloadDisplayName</key>
+	<string>StrongBlock Auto DNS - YouTube Facebook L0kL0k Web</string>
+	<key>PayloadDescription</key>
+	<string>DNS NextDNS d18ad9. Bo loc quang cao can cau hinh trong NextDNS; mobileconfig khong chua quy tac chan domain.</string>
+	<key>PayloadOrganization</key>
+	<string>StrongBlock</string>
+	<key>PayloadScope</key>
+	<string>User</string>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>PayloadType</key>
+			<string>com.apple.dnsSettings.managed</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>PayloadIdentifier</key>
+			<string>vn.strongblock.dns.d18ad9</string>
+			<key>PayloadUUID</key>
+			<string>A9FBF050-FCDC-403A-8C55-71257721CCBB</string>
+			<key>PayloadDisplayName</key>
+			<string>StrongBlock NextDNS d18ad9</string>
+			<key>PayloadDescription</key>
+			<string>DNS-over-HTTPS to NextDNS; no Apple-specific DNS overrides.</string>
+			<key>DNSSettings</key>
+			<dict>
+				<key>DNSProtocol</key>
+				<string>HTTPS</string>
+				<key>ServerURL</key>
+				<string>https://dns.nextdns.io/d18ad9</string>
+			</dict>
+			<key>OnDemandRules</key>
+			<array>
+				<dict>
+					<key>Action</key>
+					<string>Connect</string>
+				</dict>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
