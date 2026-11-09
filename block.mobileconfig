@@ -2,41 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>PayloadType</key>
-	<string>Configuration</string>
-	<key>PayloadVersion</key>
-	<integer>1</integer>
-	<key>PayloadIdentifier</key>
-	<string>vn.strongblock.profile.d18ad9</string>
-	<key>PayloadUUID</key>
-	<string>8186D459-1DF7-4A17-A2B9-DFF6420DDF19</string>
-	<key>PayloadDisplayName</key>
-	<string>StrongBlock - Chan quang cao DNS</string>
-	<key>PayloadDescription</key>
-	<string>System-wide encrypted DNS via NextDNS d18ad9. Filtering configured in NextDNS dashboard. No Apple-specific blocking.</string>
-	<key>PayloadOrganization</key>
-	<string>StrongBlock</string>
-	<key>PayloadScope</key>
-	<string>User</string>
 	<key>PayloadContent</key>
 	<array>
 		<dict>
-			<key>PayloadType</key>
-			<string>com.apple.dnsSettings.managed</string>
-			<key>PayloadVersion</key>
-			<integer>1</integer>
-			<key>PayloadIdentifier</key>
-			<string>vn.strongblock.dns.d18ad9</string>
-			<key>PayloadUUID</key>
-			<string>AD043648-6AC7-402A-83D0-F10C1CA11727</string>
-			<key>PayloadDisplayName</key>
-			<string>StrongBlock NextDNS d18ad9</string>
-			<key>PayloadDescription</key>
-			<string>DNS-over-HTTPS to NextDNS; no Apple-specific DNS overrides.</string>
 			<key>DNSSettings</key>
 			<dict>
 				<key>DNSProtocol</key>
 				<string>HTTPS</string>
+				<key>ServerName</key>
+				<string>dns.nextdns.io</string>
 				<key>ServerURL</key>
 				<string>https://dns.nextdns.io/d18ad9</string>
 			</dict>
@@ -47,7 +21,83 @@
 					<string>Connect</string>
 				</dict>
 			</array>
+			<key>PayloadDisplayName</key>
+			<string>NextDNS d18ad9 - DNS-over-HTTPS</string>
+			<key>PayloadIdentifier</key>
+			<string>vn.strongblock.nextdns.d18ad9.dns</string>
+			<key>PayloadType</key>
+			<string>com.apple.dnsSettings.managed</string>
+			<key>PayloadUUID</key>
+			<string>2153A763-7B0B-4680-B34C-87A134C86A93</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>PayloadContent</key>
+			<data>
+			MIIFLjCCAxagAwIBAgIQalXDHRVvw+d6lDC8u80XMTANBgkqhkiG
+			9w0BAQsFADAxMRUwEwYDVQQKEwxOZXh0RE5TIEluYy4xGDAWBgNV
+			BAMTD05leHRETlMgUm9vdCBDQTAeFw0yMDAxMDEwMDAwMDBaFw00
+			MDAxMDEwMDAwMDBaMDExFTATBgNVBAoTDE5leHRETlMgSW5jLjEY
+			MBYGA1UEAxMPTmV4dEROUyBSb290IENBMIICIjANBgkqhkiG9w0B
+			AQEFAAOCAg8AMIICCgKCAgEA/XxolBTLZlK7723ufhb39RHo8e4I
+			iXohvVtTucUxEhHKzxhnexKMOHDbFoBniGOuepFoIbHAP86pERXU
+			Q2GatNftAnCZp+WAIlmoHRgwVM93AhEus54YIrZa5MZJdu1BLWxa
+			nRzCzCLy+j3a6Lda3fpMsIrB2DFI1uupfRre4FCXGiEjJ7Sg0pst
+			ecH+7RYGr5lFhsl1n7RZQ1qKOk0jY3h6UtGyujodz9PXHtG6AA3G
+			pAlNOAseIHwhzwVhYJlVysG8oLOy2wq4GEnomU/l/9B1SC24815L
+			AV+uyGLcyYdXO3QnK0borz46hGg532HCVXZ8I3azioaVs+z5GiFK
+			a7tPH3s2Y4do846i1Hr8aTXrCCcGKguDqHblRsA+lsp7qZldbBmx
+			65UJjTv3qm4AH2ktAX4Oqz/hH92fqkol+CWgtkxTNbOSv9Ypu+wR
+			kRFCiiK6wBj1fQulkZy2E03RYuGywx53312L0mPRgRpDl6K4nkXZ
+			+IfkJKxVvHTg6kD9yXy8H7zBNfLYVhODydFpSZANj7qE/UQ7sWnR
+			BoX3EEA2Sz9X64LfCNSMe39gxjR2l9tsy84LIwimyEWF5wh+amlp
+			S0NUJqHV4a7DaymBhFL6LdruDXhuoK72rUalVDA0xIrYPA5QA6o9
+			xZpN3shfB2fbQffkybF+WCeUEHdE1skCAwEAAaNCMEAwDgYDVR0P
+			AQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFHX0
+			wb8dexh2ldvQgETQerb8fQCvMA0GCSqGSIb3DQEBCwUAA4ICAQBI
+			bfu2TLg+CssHmc70EA4qYlV1jhsJeIgzqlq0TfhIlupUsAD/KQHn
+			m1bHqexMQaABCAdy1u59MVeYIxXQI4bIaQqZXTnvgPdB/9FAzMIO
+			0DZEzXLPVsoWq/jnSUHdv3RKttJke002CmfyjXS+mVjVYAwgCs/P
+			lidwf5jGH6tYc3L/UvNIoq4DSoCe0/w81209TB5ijWfxiL7JbX+J
+			0HnvxPRK1Esv8hzwaPxbaAFSOlDnWAazMl+28AhfA1qkZybQIvJg
+			/VjYzLCBoDLwb1TpYehO8dFU3cKWjwqKmSN6siKdHLQWpzoembyF
+			waJF5frcWeNUd4i82yRykZMErvURYRv66jQSiF7m6SE5Uzxmonxv
+			6srb6Fe0jNSPzjnraFTDGaKl8fBtrSS17++HUbr+PTetQTXrZE5e
+			MoSszZTnnRPBoNLtdOuaw0TPcawbOieeSgK9VuOn/fLqRDpY8c6K
+			2gyz2MUq2G5J93ZWpbjMAd5f4YYHIlCpkpqhCBhK9+o7vk/seHd8
+			F1YrsOLlmCgQ1n5uIddHWkYOhBYN/Y8gr6x1jjBGPQnD81DntVLY
+			1P0f4iAn43RAOPRLJ1/Q1eUlZcbd1vJ6TBcDvDOfOJV6sY6mcu1U
+			j0gIlzm2Y8Uii4ZPXRpyFidVsWxF2skF71ZPVwXU/+SMTJafHvKY
+			9KU8kA==
+			</data>
+			<key>PayloadDisplayName</key>
+			<string>NextDNS Root CA (đính kèm)</string>
+			<key>PayloadIdentifier</key>
+			<string>vn.strongblock.nextdns.d18ad9.ca</string>
+			<key>PayloadType</key>
+			<string>com.apple.security.root</string>
+			<key>PayloadUUID</key>
+			<string>17EB0324-28E9-4437-A0A6-A5D2AD03B669</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
 		</dict>
 	</array>
+	<key>PayloadDescription</key>
+	<string>DNS-over-HTTPS: https://dns.nextdns.io/d18ad9. DNS-over-TLS/QUIC tham khảo: d18ad9.dns.nextdns.io (không kích hoạt đồng thời). Bộ lọc quảng cáo quản lý trong NextDNS.</string>
+	<key>PayloadDisplayName</key>
+	<string>StrongBlock NextDNS d18ad9 + Root CA</string>
+	<key>PayloadIdentifier</key>
+	<string>vn.strongblock.nextdns.d18ad9</string>
+	<key>PayloadOrganization</key>
+	<string>StrongBlock</string>
+	<key>PayloadRemovalDisallowed</key>
+	<false/>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>A36F9E31-DE0B-4692-A5C5-55A656421051</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
 </dict>
 </plist>
